@@ -1,1 +1,1 @@
-# PBIO_381_Notebook
+# Ethan Thibault's Ecological Genomics Notebook
