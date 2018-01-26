@@ -26,7 +26,7 @@ Science should be reproducible and one of the best ways to achieve this is by lo
 
 ### Table of contents for 60 entries (Format is *Page: Date(with year-month-day). Title*)        
 * [Page 1: 2018-01-24](#id-section1). Intro to Github, RMarkdown, and UNIX command-line
-* [Page 2: 2018-01-29](#id-section2).
+* [Page 2: 2018-01-26](#id-section2). Familiarizing myself with UNIX command-line homework
 * [Page 3:](#id-section3).
 * [Page 4:](#id-section4).
 * [Page 5:](#id-section5).
@@ -99,7 +99,22 @@ Other goals for today:
 
 ------
 <div id='id-section2'/>
-### Page 2: 2018-01-29 
+### Page 2: 2018-01-26. Familiarizing myself with UNIX command-line homework
+
+As a homework assignment, I will log back into the pbio381 server, familiarize myself with some of the commands, and make this notebook post that I will push to my GitHub notebook.
+
+What did I do:
+
+* open terminal
+* enter "ssh eathibau@pbio381.uvm.edu" and then enter password
+* next I perused my files using cd to change directory and ll to view files within those directories
+* entered pwd to see current directory
+* I also realized that if you want to change to a new directory, you need to be above that in the hierarchy of files. If you aren't you can use "cd .." to move back or "cd /" but this brings you really far back.
+* I got lost going back to the root because my permission was denied once I started entering the letter directories so I couldn't see where to go next. Luckily in class I wrote what my ~ stood for "/users/e/a/eathibau" although now I am realizing I probably could have wrote "cd ~"
+* Yes "cd ~" works from the root
+
+At the risk of creating files that will clutter up my directories and confuse me in the future, I will abstain from doing that in this assignment and focus on moving around the directory, seeing what is there and problem solving how to move where I want to be.
+
 ------
 <div id='id-section3'/>
 ### Page 3:
