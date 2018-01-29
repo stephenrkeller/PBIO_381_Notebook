@@ -247,10 +247,75 @@ $(document).ready(function () {
 <hr />
 <div id="id-section3"></div>
 </div>
+<div id="page-3-working-with-rna-seq-data" class="section level3">
+<h3>Page 3: Working with RNA-Seq Data</h3>
+<div id="experimental-setup" class="section level4">
+<h4>Experimental Setup</h4>
 </div>
-<div id="page-3" class="section level2">
-<h2>### Page 3:</h2>
+<div id="populations" class="section level4">
+<h4>Populations</h4>
+<ul>
+<li>Italy (IT)</li>
+<li>Western Australia (WA)</li>
+<li>North Carolina (NC)</li>
+</ul>
+</div>
+<div id="developmental-stages" class="section level4">
+<h4>Developmental Stages</h4>
+<ul>
+<li>L3L</li>
+<li>PP1</li>
+<li>PD1</li>
+<li>AD4</li>
+</ul>
+</div>
+<div id="sex" class="section level4">
+<h4>Sex</h4>
+<ul>
+<li>Male</li>
+<li>Female</li>
+</ul>
+<p>3 pops X 4 developmental stages X 2 sexes X 3 individuals = 72 samples</p>
+<p>Sequenced on about 7 lanes of Illumina HiSeq 2500</p>
+</div>
+<div id="viewing-file" class="section level4">
+<h4>Viewing File</h4>
+<p>View first four lines of my file:</p>
+<p>zcat WA_PP1_F1_AGTCAA_L003_R1_001.fastq.gz | head -n4</p>
+<p>Output:</p>
+<p><span class="citation">@CCRI0219:155:C2LNBACXX:3:1101:1499:1976</span> 1:N:0:AGTCAA CGGGATCGTAAGGAGCTAATTCTTTAGCACGGGATGTTTTTACTAAATCAACCCATTCCGGTACTTTTAGTTTTCCTGATTTTTTAAGAAATTGGGCGAA + @@?DDDDDFFH??FHBHGI4CB?FHGH&gt;@<a href="mailto:EGG@DEHHIGIEFHE">EGG@DEHHIGIEFHE</a><a href="mailto:DH9CC3B;;7@CCEBHEDEDEDE@ACAC;">DH9CC3B;;7@CCEBHEDEDEDE@ACAC;</a>&gt;<span class="citation">@CCCCCCFBBA</span>&gt;<span class="citation">@C9A</span>:&gt;@?B&gt;&lt;@</p>
+<p>Line 1: begins with @ and then information about the read</p>
+<p>Line 2: the actual DNA sequence</p>
+<p>Line 3: always begins with a +</p>
+<p>Line 4: quality scores</p>
+<p>P is the probability that a base pair call was an error and then converted to Q score on a scale of 0 to 40</p>
+</div>
+<div id="visualize-using-fastqc" class="section level4">
+<h4>Visualize using FastQC</h4>
+<p>This makes the fastqc file, using the path to the file and then use -o to specify an output directory (the directory must be created beforehand (using mkdir).</p>
+<p>This gives you a summary of all the data.</p>
+<p>fastqc /data/project_data/beetles/rawdata/WA_PP1_F1_AGTCAA_L003_R1_001.fastq.gz -o ~/Fastqc_output/</p>
+<p>Open/view the html output file via Fetch</p>
+<ul>
+<li>pbio381.uvm.edu</li>
+<li>uvm netid</li>
+<li>password</li>
+</ul>
+<p>Open/view the html output file via scp command</p>
+<ul>
+<li>Open new terminal</li>
+<li>change directory to where I want to download the file to my local computer</li>
+<li>use scp command:</li>
+</ul>
+<p>ip0af527d4:~ ethanthibault$ cd /Users/ethanthibault/Documents/UVM_2018/PBIO381/PBIO_381_Notebook ip0af527d4:PBIO_381_Notebook ethanthibault$ scp <a href="mailto:eathibau@pbio381.uvm.edu">eathibau@pbio381.uvm.edu</a>:~/Fastqc_output/WA_PP1_F1_AGTCAA_L003_R1_001_fastqc.html . <a href="mailto:eathibau@pbio381.uvm.edu's">eathibau@pbio381.uvm.edu's</a> password: WA_PP1_F1_AGTCAA_L003_R1_001_fastqc.html 100% 350KB 6.8MB/s 00:00<br />
+ip0af527d4:PBIO_381_Notebook ethanthibault$</p>
+<ul>
+<li>the (.) after the html file places it in my current directory where I can now open it</li>
+</ul>
+<hr />
 <div id="id-section4"></div>
+</div>
+</div>
 </div>
 <div id="page-4" class="section level2">
 <h2>### Page 4:</h2>

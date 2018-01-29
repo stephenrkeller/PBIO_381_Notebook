@@ -117,7 +117,83 @@ At the risk of creating files that will clutter up my directories and confuse me
 
 ------
 <div id='id-section3'/>
-### Page 3:
+### Page 3: Working with RNA-Seq Data
+
+#### Experimental Setup
+
+#### Populations
+
+* Italy (IT)
+* Western Australia (WA)
+* North Carolina (NC)
+
+#### Developmental Stages
+
+* L3L
+* PP1
+* PD1
+* AD4
+
+#### Sex
+
+* Male
+* Female
+
+3 pops X 4 developmental stages X 2 sexes X 3 individuals = 72 samples
+
+Sequenced on about 7 lanes of Illumina HiSeq 2500
+
+#### Viewing File
+
+View first four lines of my file:
+
+zcat WA_PP1_F1_AGTCAA_L003_R1_001.fastq.gz | head -n4
+
+Output:
+
+@CCRI0219:155:C2LNBACXX:3:1101:1499:1976 1:N:0:AGTCAA
+CGGGATCGTAAGGAGCTAATTCTTTAGCACGGGATGTTTTTACTAAATCAACCCATTCCGGTACTTTTAGTTTTCCTGATTTTTTAAGAAATTGGGCGAA
++
+@@?DDDDDFFH??FHBHGI4CB?FHGH>@<EGG@DEHHIGIEFHE>DH9CC3B;;7@CCEBHEDEDEDE@ACAC;>@CCCCCCFBBA>@C9A:>@?B><@
+
+Line 1: begins with @ and then information about the read
+
+Line 2: the actual DNA sequence
+
+Line 3: always begins with a +
+
+Line 4: quality scores
+
+P is the probability that a base pair call was an error and then converted to Q score on a scale of 0 to 40
+
+#### Visualize using FastQC
+
+This makes the fastqc file, using the path to the file and then use -o to specify an output directory (the directory must be created beforehand (using mkdir).
+
+This gives you a summary of all the data.
+
+fastqc /data/project_data/beetles/rawdata/WA_PP1_F1_AGTCAA_L003_R1_001.fastq.gz -o ~/Fastqc_output/
+
+Open/view the html output file via Fetch
+
+* pbio381.uvm.edu
+* uvm netid
+* password
+
+Open/view the html output file via scp command
+
+* Open new terminal
+* change directory to where I want to download the file to my local computer
+* use scp command:
+
+ip0af527d4:~ ethanthibault$ cd /Users/ethanthibault/Documents/UVM_2018/PBIO381/PBIO_381_Notebook 
+ip0af527d4:PBIO_381_Notebook ethanthibault$ scp eathibau@pbio381.uvm.edu:~/Fastqc_output/WA_PP1_F1_AGTCAA_L003_R1_001_fastqc.html .
+eathibau@pbio381.uvm.edu's password: 
+WA_PP1_F1_AGTCAA_L003_R1_001_fastqc.html      100%  350KB   6.8MB/s   00:00    
+ip0af527d4:PBIO_381_Notebook ethanthibault$ 
+
+* the (.) after the html file places it in my current directory where I can now open it
+
 ------
 <div id='id-section4'/>
 ### Page 4:
