@@ -28,10 +28,10 @@ Science should be reproducible and one of the best ways to achieve this is by lo
 * [Page 1: 2018-01-24](#id-section1). Intro to Github, RMarkdown, and UNIX command-line
 * [Page 2: 2018-01-26](#id-section2). Familiarizing myself with UNIX command-line homework
 * [Page 3: 2018-01-29](#id-section3). Working with RNA-Seq data (day one)
-* [Page 4:](#id-section4).
-* [Page 5:](#id-section5).
-* [Page 6:](#id-section6).
-* [Page 7:](#id-section7).
+* [Page 4: 2018-01-31](#id-section4). Working with RNA-Seq data (day two)
+* [Page 5: 2018-02-05](#id-section5). Working with RNA-Seq data (day three)
+* [Page 6: 2018-02-06](#id-section6). Working with RNA-Seq data (day four)
+* [Page 7: 2018-02-12](#id-section7). Working with RNA-Seq data (day five)
 * [Page 8:](#id-section8).
 * [Page 9:](#id-section9).
 * [Page 10:](#id-section10).
@@ -196,16 +196,238 @@ ip0af527d4:PBIO_381_Notebook ethanthibault$
 
 ------
 <div id='id-section4'/>
-### Page 4:
+### Page 4: Working with RNA-Seq data (day two)
+
+Use "vim" command to open up and view trim_example.sh file
+
+cp /data/scripts/trim_example.sh ~/scripts/
+
+Edit things in vim using "i" then hit esc (leaves edit mode) and enter ":wq" to write and escape.
+
+* ":" allows you to enter commands
+* "w" allows you to write
+* "q" quits vim
+* "w trim_F1.sh" allows you to rename file
+
+The new file was written to the current directory and use the following code to make it executable:
+
+chmod u+x trim_F1.sh
+
+* "u" means owner
+* "x" makes it executable
+
+Making scripts like this allows you to run one command in the terminal to execute many different lines of code.
+
+Use fastqc command to view these files.
+
+Use Fetch to open it, but also scp to move it to my local drive:
+
+scp eathibau@pbio381.uvm.edu:~/Fastqc_output/*html .
+
+#### Mapping Reads
+
+* Download reference transcriptome and make an index (Steve and Melissa already did this)
+* Enter Screen with "screen"
+* Run your command
+* leave screen with "cntl+a+d"
+
+This allows you to quit terminal and close/shutoff computer without it ending
+
 ------
 <div id='id-section5'/>
-### Page 5:
+### Page 5: Working with RNA-Seq data (day three)
+
+- Save last 100 lines as tail.sam
+- open with vim
+- get rid of wrapping in vim
+
+tail -n 100 WA_PP1_F1_bwamem.sam > tail.sam
+
+vim tail.sam
+
+:set nowrap
+
+#### This is how you interpret the sam file
+
+In order of columns from left to right
+
+- the read, aka. query, name,
+- a FLAG (number with information about mapping success and orientation and whether the read is the left or right read),
+- the reference sequence name to which the read mapped
+- the leftmost position in the reference where the read mapped
+- the mapping quality (Phred-scaled)
+- a CIGAR string that gives alignment information (how many bases Match (M), where there’s an Insertion (I) or Deletion (D))
+- an ‘=’, mate position, inferred insert size (columns 7,8,9),
+- the query sequence and Phred-scaled quality from the FASTQ file (columns 10 and 11),
+- then Lots of good information in TAGS at the end, if the read mapped, including whether it is a unique read (XT:A:U), the number of best hits (X0:i:1), the number of suboptimal hits (X1:i:0).
+
+Use grep to try and find flags
+
+grep -c X0:i:1 WA_PP1_F1_bwamem.sam
+
+The -c gives you the count of that flag
+
+Use "man" to get the manual for a command
+
+man grep
+
+
+
+
+
+Use samtools to see a summary of how well our reads mapped to the reference
+
+samtools flagstat WA_PP1_F1_bwamem.sam
+
 ------
 <div id='id-section6'/>
-### Page 6:
+### Page 6: Working with RNA-Seq data (day four)
+
+BASH
+
+- make a bash file "vim test_bash"
+- shift i allows you to alter the script
+- put "#! /bin/bash/"
+- type stuff
+- alter accessibility "chmod u+x test_bash"
+- open file "./test_bash"  the . is the current directory
+- rename it with the .sh at the end "mv ./test_bash ./test_bash.sh"
+
+To move the two files from the server to my local computer I open a new terminal, drag the folder to set directory.
+
 ------
 <div id='id-section7'/>
-### Page 7:
+### Page 7: Working with RNA-Seq (day five)
+
+Here is my current code for the the DESeq2. I did not have what Melissa had on the projector.
+
+If that is too difficult to read, [this](DESeq2.R) is hopefully a functional link to my R code
+
+
+##### set working directory
+
+setwd("~/Documents/UVM_2018/PBIO381/PBIO_381_Notebook")
+
+library("DESeq2")
+
+library("ggplot2")
+
+countsTable <- read.delim("allcountsdataRN_noIT.txt", header=TRUE, stringsAsFactors = TRUE, row.names = 1)
+
+countData <- as.matrix(countsTable)
+
+head(countData)
+
+conds <- read.delim("cols_data_noIT.txt", header=TRUE, stringsAsFactors =  TRUE, row.names = 1)
+
+head(conds)
+
+colData <- as.data.frame(conds)
+
+#########################################
+
+dds <- DESeqDataSetFromMatrix(countData = countData, colData = colData, design = ~devstage + sex + population)
+
+##### "population effect" model controlling for differences in devstage and sex
+
+dim(dds)
+
+##### [1] 17483    48
+
+dds <- dds[rowSums(counts(dds)) > 1,]
+
+dim(dds)
+
+##### [1] 16851    48     Okay, nice, only lost about 600 genes
+
+dds <- DESeq(dds, modelMatrixType = "standard")
+
+resultsNames(dds)
+
+##### [1] "Intercept"           "devstage_L3L_vs_AD4" "devstage_PD1_vs_AD4" "devstage_PP1_vs_AD4" "sex_M_vs_F"    
+
+##### [6] "population_WA_vs_NC"
+
+res <- results(dds)
+
+str(res)
+
+res <- res[order(res$padj),]
+
+head(res)
+
+##### log2 fold change (MLE): population WA vs NC 
+##### Wald test p-value: population WA vs NC 
+#####DataFrame with 6 rows and 6 columns
+##### baseMean log2FoldChange     lfcSE      stat       pvalue         padj
+##### <numeric>      <numeric> <numeric> <numeric>    <numeric>    <numeric>
+#####   OTAU017482-RA 126.291608     -5.4166340 0.6732174 -8.045892 8.561964e-16 1.268369e-11
+##### OTAU012716-RA 188.877675      4.2644034 0.5427535  7.856980 3.935069e-15 2.914706e-11
+##### OTAU008667-RA 231.871115     -0.8736955 0.1267134 -6.895051 5.384538e-12 1.994164e-08
+##### OTAU012562-RA 251.774364     -0.8774079 0.1270957 -6.903520 5.072966e-12 1.994164e-08
+##### OTAU013988-RA   4.416955      4.4229857 0.6836393  6.469765 9.815559e-11 2.908154e-07
+##### OTAU011160-RA  10.241516     -2.5149390 0.4125305 -6.096371 1.085033e-09 2.678947e-06
+
+summary(res)
+
+##### out of 16851 with nonzero total read count
+##### adjusted p-value < 0.1
+##### LFC > 0 (up)     : 333, 2% 
+##### LFC < 0 (down)   : 282, 1.7% 
+##### outliers [1]     : 85, 0.5% 
+##### low counts [2]   : 1952, 12% 
+##### (mean count < 1)
+##### [1] see 'cooksCutoff' argument of ?results
+##### [2] see 'independentFiltering' argument of ?results
+
+res_pop <- results(dds, name="population_WA_vs_NC", alpha=0.05)
+
+res_pop <- res_pop[order(res_pop$padj),]
+
+summary(res_pop)
+
+######################## Data visualization
+
+plotMA(res_pop, main="DESeq2",ylim=c(-2,2))
+
+abline(h=c(-1,1), col="blue", lwd=2)
+
+##### sex effect?
+
+res_sex <- results(dds, name="sex_M_vs_F", alpha=0.5)
+
+plotMA(res_sex, main="DESeq2",ylim=c(-2,2))
+
+abline(h=c(-1,1), col="blue", lwd=2)
+
+######## PCA
+
+vsd <- vst(dds,blind=FALSE)
+
+data <- plotPCA(vsd,intgroup=c("population","devstage","sex"), returnData=TRUE)
+
+percentVar <- round(100 * attr(data, "percentVar"))
+
+data$devstage <- factor(data$devstage, levels=c("L3L","PP1","PD1","AD4"), labels = c("L3L","PP1","PD1","AD4"))
+
+pdf(file="PCA_sex_by_stage.pdf",height=5.5,width=5.5)
+
+ggplot(data,aes(PC1,PC2,color=sex,shape=devstage)) +
+  geom_point(size=4,alpha=0.85) +
+  xlab(paste0("PC1: ",percentVar[1],"% variance")) +
+  ylab(paste0("PC2: ",percentVar[2],"% variance")) +
+  theme_minimal()
+  
+dev.off()
+
+ggplot(data,aes(PC1,PC2,color=population,shape=devstage)) +
+  geom_point(size=4,alpha=0.85) +
+  xlab(paste0("PC1: ",percentVar[1],"% variance")) +
+  ylab(paste0("PC2: ",percentVar[2],"% variance")) +
+  theme_minimal()**
+
+
+
 ------
 <div id='id-section8'/>
 ### Page 8:
