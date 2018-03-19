@@ -1,0 +1,152 @@
+---
+title: 'Assignment 1: RNA-seq for Gene Expression Analysis'
+author: "Ethan Thibault"
+date: "3/4/2018"
+output: html_document
+---
+
+This is the code for my first assignment in PBIO 381 where I will use RNA-seq data to identify differential gene expression between Western Australian (WA) and North Carolinian (NC) bull headed beetle, **Onthophagus taurus**, males, females, and male female combined populations.
+
+By doing this in R Markdown, I will be able to annotate my code in Markdown and in chunks and publish that as an html link for my lab notebook with consistent formatting that doesn't turn my comments into headers.
+
+```{r}
+# Set working directory
+setwd("~/Documents/UVM_2018/PBIO381/PBIO_381_Notebook")
+
+# upload packages
+library(DESeq2)
+library(ggplot2)
+
+# # Read in data file with each individual as the column headers, each contig being mapped to as the row names and the number of counts per contig per individual
+# countsTable <- read.delim("allcountsdataRN_noIT.txt", header=TRUE, stringsAsFactors = TRUE, row.names = 1)
+# 
+# # Convert that table into a matrix and verify with head
+# countData <- as.matrix(countsTable)
+# head(countData)
+# 
+# # Read in a data file with the individual codes delinneated
+# conds <- read.delim("cols_data_noIT.txt", header=TRUE, stringsAsFactors =  TRUE, row.names = 1)
+# 
+# # View it with head and convert to a data frame.
+# head(conds)
+# colData <- as.data.frame(conds)
+# # group the columns into a third column with sex, population and devstage and head to verify
+# colData$group <- factor(paste0(colData$sex,"_",colData$population,"_",colData$devstage))
+# head(colData, n=20)
+
+# # Get a model while controlling for differences in devstage and sex
+# dds <- DESeqDataSetFromMatrix(countData = countData, colData = colData, design = ~ group)
+# 
+# # Get the dimensions of the model
+# dim(dds)
+# 
+# # Exclude any mapped counts where there were one or fewer
+# dds <- dds[rowSums(counts(dds)) > 1,]
+# dim(dds)
+# 
+# # This removed 632 rows (contigs that had one or less mapped reads)
+# 
+# ### steves version of DESEQ 1.14.1
+# 
+# # Using the standard modelmatrixtype, identify differential gene expression using DESeq
+# # This will calculate fold changes in expression at different contigs and give me p values and adjusted p values as well
+# dds <- DESeq(dds, modelMatrixType = "standard", parallel = TRUE)
+
+# From Steve. This is the output from Steve's
+load("dds_GroupDesign.RData")
+resultsNames(dds)
+
+#  [1] "Intercept"     "groupNC.AD4.F" "groupNC.AD4.M" "groupNC.L3L.F" "groupNC.L3L.M"
+#  [6] "groupNC.PD1.F" "groupNC.PD1.M" "groupNC.PP1.F" "groupNC.PP1.M" "groupWA.AD4.F"
+# [11] "groupWA.AD4.M" "groupWA.L3L.F" "groupWA.L3L.M" "groupWA.PD1.F" "groupWA.PD1.M"
+# [16] "groupWA.PP1.F" "groupWA.PP1.M"
+
+# assign resuuls to a variable and view its structure (which is difficult to understand)
+res <- results(dds)
+str(res)
+
+# Re-order the results in order of adjusted pvalue and get a summary
+res <- res[order(res$padj),]
+head(res)
+summary(res)
+
+# First, I am interested in the results of comparing the two populations, so I am going to extract the results of just the population comparison
+res_pop <- results(dds, contrast = list(c("groupNC.AD4.F", "groupNC.AD4.M", "groupNC.L3L.F", "groupNC.L3L.M", "groupNC.PD1.F", "groupNC.PD1.M", "groupNC.PP1.F", "groupNC.PP1.M"),c("groupWA.AD4.F", "groupWA.AD4.M", "groupWA.L3L.F", "groupWA.L3L.M", "groupWA.PD1.F", "groupWA.PD1.M", "groupWA.PP1.F", "groupWA.PP1.M")), listValues=c(1/2,-1/2),alpha=0.05)
+# res_male <- results(dds, contrast = list(c(),c()), listValues = c(1/2,-1/2), alpha = 0.05)
+# res_female <- results(dds, contrast = list(c(),c()), listValues = c(1/2,-1/2), alpha = 0.05)
+
+# Re order in terms of adjusted p values and view
+res_pop <- res_pop[order(res_pop$padj),]
+head(res_pop)
+
+# View summary
+summary(res_pop)
+
+# Make an MA plot
+plotMA(res_pop, main="DESeq2",ylim=c(-2,2))
+abline(h=c(-1,1), col="blue", lwd=2)
+
+# subset genes that are significant and view new dimensions
+sig_pop <- res_pop[which(res_pop$padj < 0.05), ]
+dim(sig_pop)
+
+# convert to a data frame, add row names
+sig_pop_df <- as.data.frame(sig_pop)
+sig_pop_df$Row.names <- rownames(sig_pop_df)
+dim(sig_pop_df)
+
+# put genes of interest into a vector and verify by length
+genesOfInterest_pop <- c(sig_pop_df$Row.names)
+length(genesOfInterest_pop)
+
+# Making GO plots
+write.csv(res_pop, file="DGE_pop.csv", row.names=TRUE, quote=FALSE)
+
+# change p-value to -log(pvalue) and export as .csv with row names
+
+neglogpval_pop <- as.matrix(-log(res_pop$pvalue))
+head(neglogpval_pop)
+
+res_pop_negpval <- cbind(row.names(res_pop),neglogpval_pop)
+head(res_pop_negpval)
+
+colnames(res_pop_negpval)=c("gene","neglogpval")
+head(res_pop_negpval)
+write.csv(res_pop_negpval, file="DGE_pop_neglogpval.csv", row.names=FALSE,quote=FALSE,col.names=TRUE)
+
+# Rest of GO plot in different file
+
+# make a new column called combined with all three variables in it
+dds$combined = factor(paste0(dds$population, "-", dds$devstage, "-", dds$sex))
+dds$combined
+dds$combined <- factor(dds$combined, levels=c("NC-AD4-F","NC-AD4-M", "NC-L3L-F", "NC-L3L-M", "NC-PD1-F", "NC-PD1-M", "NC-PP1-F", "NC-PP1-M", "WA-AD4-F", "WA-AD4-M", "WA-L3L-F", "WA-L3L-M", "WA-PD1-F", "WA-PD1-M", "WA-PP1-F", "WA-PP1-M"), labels=c("NC-AD4-F","NC-AD4-M", "NC-L3L-F", "NC-L3L-M", "NC-PD1-F", "NC-PD1-M", "NC-PP1-F", "NC-PP1-M", "WA-AD4-F", "WA-AD4-M", "WA-L3L-F", "WA-L3L-M", "WA-PD1-F", "WA-PD1-M", "WA-PP1-F", "WA-PP1-M"))
+
+# get the mean per group
+baseMeanPerGrp_pop <- sapply( levels(dds$combined), function(lvl) rowMeans( counts(dds,normalized=TRUE)[,dds$combined == lvl] ) )
+
+# view with head and dim
+head(baseMeanPerGrp_pop)
+dim(baseMeanPerGrp_pop)
+
+# pulls out normalized counts (avg of 3 reps) for all of our significant genes
+m_pop <- baseMeanPerGrp_pop[genesOfInterest_pop, c("NC-AD4-F","NC-AD4-M", "NC-L3L-F", "NC-L3L-M", "NC-PD1-F", "NC-PD1-M", "NC-PP1-F", "NC-PP1-M", "WA-AD4-F", "WA-AD4-M", "WA-L3L-F", "WA-L3L-M", "WA-PD1-F", "WA-PD1-M", "WA-PP1-F", "WA-PP1-M")]
+
+# View
+head(m_pop)
+dim(m_pop)
+
+# Create heatmap
+mat_scaled_pop = t(apply(m_pop, 1, scale))
+head(mat_scaled_pop)
+
+library(pheatmap)
+
+pheatmap(mat_scaled_pop, labels_col=c("NC-AD4-F","NC-AD4-M", "NC-L3L-F", "NC-L3L-M", "NC-PD1-F", "NC-PD1-M", "NC-PP1-F", "NC-PP1-M", "WA-AD4-F", "WA-AD4-M", "WA-L3L-F", "WA-L3L-M", "WA-PD1-F", "WA-PD1-M", "WA-PP1-F", "WA-PP1-M"), cluster_cols=TRUE, cluster_rows=TRUE)
+
+
+
+
+```
+
+
+

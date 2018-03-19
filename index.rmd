@@ -32,12 +32,12 @@ Science should be reproducible and one of the best ways to achieve this is by lo
 * [Page 5: 2018-02-05](#id-section5). Working with RNA-Seq data (day three)
 * [Page 6: 2018-02-06](#id-section6). Working with RNA-Seq data (day four)
 * [Page 7: 2018-02-12](#id-section7). Working with RNA-Seq data (day five)
-* [Page 8:](#id-section8).
-* [Page 9:](#id-section9).
-* [Page 10:](#id-section10).
-* [Page 11:](#id-section11).
-* [Page 12:](#id-section12).
-* [Page 13:](#id-section13).
+* [Page 8:](#id-section8). Working with RNA-Seq data (day six)
+* [Page 9:](#id-section9). Population Genomics 1: Intro to SNP and Genotype Calling
+* [Page 10:](#id-section10). Population Genomics 2: Diversity and Site Frequency Spectrum (SFS)
+* [Page 11:](#id-section11). Population Genomics 3: Admixture and Population Structure
+* [Page 12:](#id-section12). 
+* [Page 13:](#id-section13). Code for Assignment One
 * [Page 14:](#id-section14).
 * [Page 15:](#id-section15).
 * [Page 16:](#id-section16).
@@ -304,6 +304,7 @@ Here is my current code for the the DESeq2. I did not have what Melissa had on t
 If that is too difficult to read, [this](DESeq2.R) is hopefully a functional link to my R code
 
 
+
 ##### set working directory
 
 setwd("~/Documents/UVM_2018/PBIO381/PBIO_381_Notebook")
@@ -430,22 +431,265 @@ ggplot(data,aes(PC1,PC2,color=population,shape=devstage)) +
 
 ------
 <div id='id-section8'/>
-### Page 8:
+### Page 8: Working with RNA-Seq data (day sex)
+
+
+
 ------
 <div id='id-section9'/>
-### Page 9:
+### Page 9: Population Genomics 1: Intro to SNP and Genotype Calling
+
+Goals:
+
+1. Take sequence alignment files (sam) and extract mapping stats & read depth coverage
+2. Convert sam to binary (bam) format, and use samtools/bcftools for SNP detection
+3. Learn Variant Call Format (vcf) for storing SNP genotypes
+4. Begin to evaluate filtering strategies for determining high-quality SNPs for downstream analyses
+
+Where we've been:
+
+Started with raw reads. Then using trimmomatic produced clean reads. Next we mapped to the reference genome using bwa to get sam files. Then we used the python script to obtain a counts file. Next, we used DESeq2 to identify differentially expressed genes. Then we did companion analyses like enrichment and WGCNA.
+
+Now we are going back to our sam files for pop gen studies. First we will call SNPs and genotypes. We can use samtools (used more frequently) and reads2SNPs (used less frequently but has handy paralog filtering). Then once we have SNPs we need to use quality control to identify useful SNPs and genotypes with vcftools. Once we have SNPs and genotypes that are reliable we can find pop gen statistics like pi, Tajima's D, structure selection etc.
+
+1. Convert from sam >> bam (binary file that is more condensed but unreadable)
+2. Check mapping stats
+3. Fix reads that are no longer mated (paired)
+4. Remove duplicates (takes awhile)
+5. Index for computational efficiency
+6. Use the companion program bcftools to call SNPs and genotypes
+
+Move to folder with sam file
+
+"WA_PP1_F1_bwamem.sam"
+
+type vi to open vim and type i to edit the form.
+
+put in shebang "#!/bin/bash" This tells it to read it in bash language
+
+samtools (use samtools program) view (opens file) -b (export in binary) -@ 4 (use four CPUs) WA_PP1_F1_bwamem.sam (file name) -o (output file name) WA_PP1_F1_bwamem.bam
+
+Steve provided a manual for samtools on the github page.
+
+samtools flagstat (gives you a summary of the kinds of fixes that need to be done) WA_PP1_F1_bwamem.bam (filename)
+
+samtools depth WA_PP1_F1_bwamem.bam (gives you the number of reads at each position)
+
+samtools fixmate WA_PP1_F1_bwamem.bam WA_PP1_F1_bwamem.fixmate.bam (this fixes mate pais between paired end reads that have been orphaned, input file then output file)
+
+samtools sort -@4 WA_PP1_F1_bwamem.fixmate.bam WA_PP1_F1_bwamem.fixmate.sorted.bam (sort alignments using 4 CPUs: input file then output file)
+
+samtools rmdup WA_PP1_F1_bwamem.fixmate.sorted.bam WA_PP1_F1_bwamem.fixmate.sorted.rmdup.bam (this removes pcr duplicates with input and output file. we aren't doing it becasue it takes a while but should typically do it)
+
+samtools index WA_PP1_F1_bwamem.fixmate.sorted.bam (this indexes our final alignment for fast processing)
+
+hit escape, ":w CallSNPs.sh" to write this bash file
+
+":q" to quit
+
+chmod o+x CallSNPs.sh (as owner add executable function to our file)
+
+Enter a screen to run this file in the background *control AD to quit screen
+
+"screen"
+
+"bash CallSNPs.sh" (run the script)
+
+use *control AD to exit screen
+
+samtools tview WA_PP1_F1_bwamem.fixmate.sorted.bam /data/project_data/beetles/reference/OTAU.fna (maps the reads to the reference genome)
+
 ------
 <div id='id-section10'/>
-### Page 10:
+### Page 10: Population Genomics 2: Diversity and Site Frequency Spectrum (SFS)
+
+Gives you a breakdown of all of you reads:
+
+samtools flagstat WA_PP1_F1_bwamem.fixmate.sorted.bam
+
+Now we are going to call SNPS in our bash file
+
+vi CallSNPs.sh
+
+bcftools mpileup \
+(gives you how many snps at each position and removes invariant sites)
+
+A backslash (top left goes back) allows you to move to the next line
+
+-Ou -f /data/project_data/beetles/reference/OTAU.fna \
+(output data in uncompressed form)
+
+(where to get sorted bam file)
+
+(threads 4, skip any indels ask for allele depth and total depth)
+
+"|" is a pipe that takes everything before it and sends it to a new command.
+
+"call" does its best to determine genotype of each SNP
+
+"Ov" file form
+
+"mv" allows there to be more alleles than one at a certain site
+
+"--format-fields GQ,GP" in phred scale gives you genotype quality
+
+Phred (this is log base 10) --> -10log(probability correct)
+
+">WA_PP1_F1.vcf" (output file)
+
+bcftools mpileup \
+        -Ou -f /data/project_data/beetles/reference/OTAU.fna \
+        ~/mydata/sam/WA_PP1_F1_fixmate.sorted.bam \
+        --threads 4 --skip-indel --annotate AD,DP | \
+        bcftools call -Ov -mv --format-fields GQ >WA_PP1_F1.vcf
+
+Now we want to run this:
+
+bash CallSNPs.sh
+
+VCF is the standard form for SNP data
+
+This is where the SNP data lives:
+
+/data/project_data/beetles/snps
+
+-- is how to use options in vcftools
+
+To view what is in the file without making any changes:
+
+vcftools --vcf /data/project_data/beetles/snps/OTAU_2018_samtools.vcf 
+Filter out sites with more than two alleles (again just prints what you have but doesn't change the file)
+
+vcftools --vcf /data/project_data/beetles/snps/OTAU_2018_samtools.vcf --min-alleles 2 --max-alleles 2
+
+Filter for 90% genotype quality (10 on Phred scale) (doesn't remove the data, just codes it as missing data)
+
+vcftools --vcf /data/project_data/beetles/snps/OTAU_2018_samtools.vcf --min-alleles 2 --max-alleles 2 --minGQ 10
+
+Filter for missing data (eliminate SNPs that don't have at least 80% present data)
+
+vcftools --vcf /data/project_data/beetles/snps/OTAU_2018_samtools.vcf --min-alleles 2 --max-alleles 2 --minGQ 10 --max-missing 0.8
+
+Add filter to remove any alleles present as only one heterozygote (1/144) (minor allele frequency filter)
+
+vcftools --vcf /data/project_data/beetles/snps/OTAU_2018_samtools.vcf --min-alleles 2 --max-alleles 2 --minGQ 10 --max-missing 0.8 --maf 0.01
+
+Write a new file
+
+vcftools --vcf /data/project_data/beetles/snps/OTAU_2018_samtools.vcf --min-alleles 2 --max-alleles 2 --minGQ 10 --max-missing 0.8 --maf 0.01 --recode --out OTAU_2018_samtoolsFILTERED.vcf
+
+
+
 ------
 <div id='id-section11'/>
-### Page 11:
+### Page 11: Population Genomics 3: Admixture and Population Structure
+
+Each person is testing vcf file to test outputs of samtools vs read2snps and different max missing values. Use parameters from last time but use max missing of one and --het gives summary file of genome wide heterozygosity for each individual to see which way worked best. --out produces output file
+
+vcftools --vcf OTAU_2018_samtools.vcf  --min-alleles 2 --max-alleles 2 --maf 0.01 --minGQ 20 --max-missing 1.0 --het --out ~/myresults/samtoolsmiss1.0 
+
+Use R from the command line to look at summary het files
+
+"R"
+
+"df <- read.table("samtoolsmiss1.0.het",header=T)"
+
+"str(df)"
+
+The F row will tell us how heterozygous it is. more negative is totally het and randomly mating F would be roughly 0. We should probably work with read2SNPs with 0.8 max missing filter
+
+"quit()" gets you out of R
+
+"--recode" writes new file
+
+This is ultimately the code we ran and saved for moving forward:
+
+vcftools --vcf OTAU_2018_reads2snps_DP10GP95.vcf  --min-alleles 2 --max-alleles 2 --maf 0.01 --max-missing 0.8 --recode --out  ~/myresults/OTAU_2018_reads2snps_DP10GP95_biallelic_MAF01_Miss0.8.vcf
+
+Start SFS (site frequency spectra)
+
+We are going to do it by population
+
+use grep to grab all individuals:
+
+"grep "IT" /data/project_data/beetles/metadata/cols_data.txt"
+
+saves file and use cut to take what i grabbed with grep and just one column
+
+"grep "IT" /data/project_data/beetles/metadata/cols_data.txt | cut -f 1"
+
+give it a file to save as
+
+"grep "IT" /data/project_data/beetles/metadata/cols_data.txt | cut -f 1 >IT.inds"
+
+Use vcf tools to pull sites only from IT individuals and calculate frequencies. out of IT makes sure IT goes into output file name
+
+"vcftools --vcf OTAU_2018_reads2snps_DP10GP95_biallelic_MAF01_Miss0.8.vcf.recode.vcf  --keep IT.inds --freq2 --out IT"
+
 ------
 <div id='id-section12'/>
-### Page 12:
+### Page 12: Population Genomics 4: Admixture and Population Structure Continued
+
+First thing is to grep and get freqs for all three populations like at the end of last class and use scp to move them to my working directory so I can work with them in R.
+
+ip0af52337:~ ethanthibault$ cd /Users/ethanthibault/Documents/UVM_2018/PBIO381/PBIO_381_Notebook 
+ip0af52337:PBIO_381_Notebook ethanthibault$ scp eathibau@pbio381.uvm.edu:~/myresults/*frq .
+eathibau@pbio381.uvm.edu's password: 
+IT.frq                                        100% 5096KB   5.0MB/s   00:00    
+NC.frq                                        100% 4844KB   4.9MB/s   00:00    
+WA.frq                                        100% 4958KB   5.0MB/s   00:00    
+ip0af52337:PBIO_381_Notebook ethanthibault$ 
+
+In new R script we are graphing SFS. There appear to be differences between the three populations in the SFS plots that suggest different population histories. Now we should run admixture to see if there is evidence for distinct ancestries.
+
+Go to terminal, take our vcf file and thin to remove potential linkage disequilibrium, convert from vcf to a .geno file that admixture requires. Then write a bash script to run admixture with K=1 to K=10 to see where the data tells us where population structure exists. Then take that output back into R. (This is the workflow)
+
+Thin to get SNPs to make sure they aren't close together and would fall under linkage disequilibrium.  (--thin 1000) Within a 1000bp window pick a snp and the next snp needs to be at least 1000bp apart.
+
+vcftools --vcf OTAU_2018_reads2snps_DP10GP95_biallelic_MAF01_Miss0.8.vcf.recode.vcf --thin 1000 --recode
+
+In Java run PGDSpider in order to convert out file types into many different kinds of data forms.
+
+Asks for beetle.pop file, beetle.spid file, and then bash script to run commands. (Steve made these files)
+
+copy files into myscripts:
+
+cp /data/project_data/beetles/metadata/beetles.pop .
+
+cp /data/scripts/beetle.spid .
+
+cp /data/scripts/vcf2geno.sh .
+
+Change path with beetle.spid file to where we want output files to go (change mydata to myscripts)
+
+open bash script and the first thing you can change is how many Gigabytes of space you give the program to run. (-Xmx2G)
+
+make bash script to cycle through all 10 K. j gives it 4 threads of CPU to work. cv is cross values. putting the CV values in the txt file allows you to pick the smallest value (least error).
+
+"#!/bin/bash
+
+for K in {1..10}
+
+do
+
+admixture -j 4 --cv 10 ~/myresults/out.recode.vcf.geno $K | tee log${K}.out
+
+done
+
+grep "CV" log*out > chooseK.txt"
+
+Change the permissions:
+
+chmod u+x ADMIX.sh
+
+
+
 ------
 <div id='id-section13'/>
-### Page 13:
+### Page 13: Code for Assignment One
+
+[Here](AssignmentOneCode.html) is a link to the code for assignment one.
+
 ------
 <div id='id-section14'/>
 ### Page 14:

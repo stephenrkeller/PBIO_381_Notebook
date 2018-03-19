@@ -1,0 +1,144 @@
+---
+title: "Assignment1female"
+author: "Ethan Thibault"
+date: "3/5/2018"
+output: html_document
+---
+
+```{r}
+# Set working directory
+setwd("~/Documents/UVM_2018/PBIO381/PBIO_381_Notebook")
+
+# upload packages
+library(DESeq2)
+library(ggplot2)
+
+# # Read in data file with each individual as the column headers, each contig being mapped to as the row names and the number of counts per contig per individual
+# countsTable <- read.delim("allcountsdataRN_noIT.txt", header=TRUE, stringsAsFactors = TRUE, row.names = 1)
+# 
+# # Convert that table into a matrix and verify with head
+# countData <- as.matrix(countsTable)
+# head(countData)
+# 
+# # Read in a data file with the individual codes delinneated
+# conds <- read.delim("cols_data_noIT.txt", header=TRUE, stringsAsFactors =  TRUE, row.names = 1)
+# 
+# # View it with head and convert to a data frame.
+# head(conds)
+# colData <- as.data.frame(conds)
+# # group the columns into a third column with sex, population and devstage and head to verify
+# colData$group <- factor(paste0(colData$sex,"_",colData$population,"_",colData$devstage))
+# head(colData, n=20)
+
+# # Get a model while controlling for differences in devstage and sex
+# dds <- DESeqDataSetFromMatrix(countData = countData, colData = colData, design = ~ group)
+# 
+# # Get the dimensions of the model
+# dim(dds)
+# 
+# # Exclude any mapped counts where there were one or fewer
+# dds <- dds[rowSums(counts(dds)) > 1,]
+# dim(dds)
+# 
+# # This removed 632 rows (contigs that had one or less mapped reads)
+# 
+# ### steves version of DESEQ 1.14.1
+# 
+# # Using the standard modelmatrixtype, identify differential gene expression using DESeq
+# # This will calculate fold changes in expression at different contigs and give me p values and adjusted p values as well
+# dds <- DESeq(dds, modelMatrixType = "standard", parallel = TRUE)
+
+# From Steve. This is the output from Steve's
+load("dds_GroupDesign.RData")
+resultsNames(dds)
+
+#  [1] "Intercept"     "groupNC.AD4.F" "groupNC.AD4.M" "groupNC.L3L.F" "groupNC.L3L.M"
+#  [6] "groupNC.PD1.F" "groupNC.PD1.M" "groupNC.PP1.F" "groupNC.PP1.M" "groupWA.AD4.F"
+# [11] "groupWA.AD4.M" "groupWA.L3L.F" "groupWA.L3L.M" "groupWA.PD1.F" "groupWA.PD1.M"
+# [16] "groupWA.PP1.F" "groupWA.PP1.M"
+
+# assign resuuls to a variable and view its structure (which is difficult to understand)
+res <- results(dds)
+str(res)
+
+# Re-order the results in order of adjusted pvalue and get a summary
+res <- res[order(res$padj),]
+head(res)
+summary(res)
+
+# First, I am interested in the results of comparing the two populations, so I am going to extract the results of just the population comparison
+res_female <- results(dds, contrast = list(c("groupNC.AD4.F", "groupNC.L3L.F", "groupNC.PD1.F", "groupNC.PP1.F"), c("groupWA.AD4.F", "groupWA.L3L.F", "groupWA.PD1.F", "groupWA.PP1.F")), listValues = c(1/2,-1/2), alpha = 0.05)
+
+# Re order in terms of adjusted p values and view
+res_female <- res_female[order(res_female$padj),]
+head(res_female)
+
+# View summary
+summary(res_female)
+
+# Make an MA plot
+plotMA(res_female, main="DESeq2",ylim=c(-2,2))
+abline(h=c(-1,1), col="blue", lwd=2)
+
+# subset genes that are significant and view new dimensions
+sig_female <- res_female[which(res_female$padj < 0.05), ]
+dim(sig_female)
+
+# convert to a data frame, add row names
+sig_female_df <- as.data.frame(sig_female)
+sig_female_df$Row.names <- rownames(sig_female_df)
+dim(sig_female_df)
+
+# put genes of interest into a vector and verify by length
+genesOfInterest_female <- c(sig_female_df$Row.names)
+length(genesOfInterest_female)
+
+# Making GO plots
+write.csv(res_female, file="DGE_female.csv", row.names=TRUE, quote=FALSE)
+
+# change p-value to -log(pvalue) and export as .csv with row names
+
+neglogpval_female <- as.matrix(-log(res_female$pvalue))
+head(neglogpval_female)
+
+res_female_negpval <- cbind(row.names(res_female),neglogpval_female)
+head(res_female_negpval)
+
+colnames(res_female_negpval)=c("gene","neglogpval")
+head(res_female_negpval)
+write.csv(res_female_negpval, file="DGE_female_neglogpval.csv", row.names=FALSE,quote=FALSE,col.names=TRUE)
+
+# Rest of GO plot in different file
+
+# make a new column called combined with all three variables in it
+dds$combined = factor(paste0(dds$population, "-", dds$devstage, "-", dds$sex))
+dds$combined
+dds$combined <- factor(dds$combined, levels=c("NC-AD4-F","NC-AD4-M", "NC-L3L-F", "NC-L3L-M", "NC-PD1-F", "NC-PD1-M", "NC-PP1-F", "NC-PP1-M", "WA-AD4-F", "WA-AD4-M", "WA-L3L-F", "WA-L3L-M", "WA-PD1-F", "WA-PD1-M", "WA-PP1-F", "WA-PP1-M"), labels=c("NC-AD4-F","NC-AD4-M", "NC-L3L-F", "NC-L3L-M", "NC-PD1-F", "NC-PD1-M", "NC-PP1-F", "NC-PP1-M", "WA-AD4-F", "WA-AD4-M", "WA-L3L-F", "WA-L3L-M", "WA-PD1-F", "WA-PD1-M", "WA-PP1-F", "WA-PP1-M"))
+
+# get the mean per group
+baseMeanPerGrp_female <- sapply( levels(dds$combined), function(lvl) rowMeans( counts(dds,normalized=TRUE)[,dds$combined == lvl] ) )
+
+# view with head and dim
+head(baseMeanPerGrp_female)
+dim(baseMeanPerGrp_female)
+
+# pulls out normalized counts (avg of 3 reps) for all of our significant genes
+m_female <- baseMeanPerGrp_female[genesOfInterest_female, c("NC-AD4-F", "NC-L3L-F", "NC-PD1-F", "NC-PP1-F", "WA-AD4-F", "WA-L3L-F", "WA-PD1-F", "WA-PP1-F")]
+
+# View
+head(m_female)
+dim(m_female)
+
+# Create heatmap
+mat_scaled_female = t(apply(m_female, 1, scale))
+head(mat_scaled_female)
+
+library(pheatmap)
+
+pheatmap(mat_scaled_female, labels_col=c("NC-AD4-F", "NC-L3L-F", "NC-PD1-F", "NC-PP1-F", "WA-AD4-F", "WA-L3L-F", "WA-PD1-F", "WA-PP1-F"), cluster_cols=TRUE, cluster_rows=TRUE)
+
+
+
+
+```
+

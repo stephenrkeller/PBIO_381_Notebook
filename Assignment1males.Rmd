@@ -1,0 +1,102 @@
+---
+title: "Assignment 1 males"
+author: "Ethan Thibault"
+date: "3/5/2018"
+output: html_document
+---
+```{r}
+
+setwd("~/Documents/UVM_2018/PBIO381/PBIO_381_Notebook")
+
+
+# From Steve. This is the output from Steve's
+load("dds_GroupDesign.RData")
+resultsNames(dds)
+
+#  [1] "Intercept"     "groupNC.AD4.F" "groupNC.AD4.M" "groupNC.L3L.F" "groupNC.L3L.M"
+#  [6] "groupNC.PD1.F" "groupNC.PD1.M" "groupNC.PP1.F" "groupNC.PP1.M" "groupWA.AD4.F"
+# [11] "groupWA.AD4.M" "groupWA.L3L.F" "groupWA.L3L.M" "groupWA.PD1.F" "groupWA.PD1.M"
+# [16] "groupWA.PP1.F" "groupWA.PP1.M"
+
+# assign resuuls to a variable and view its structure (which is difficult to understand)
+res <- results(dds)
+str(res)
+
+# Re-order the results in order of adjusted pvalue and get a summary
+res <- res[order(res$padj),]
+head(res)
+summary(res)
+
+# Now, I am interested in the results of comparing the males between the two populations, so I am going to extract the results of just the population comparison
+res_male <- results(dds, contrast = list(c("groupNC.AD4.M", "groupNC.L3L.M", "groupNC.PD1.M", "groupNC.PP1.M" ), c("groupWA.AD4.M", "groupWA.L3L.M", "groupWA.PD1.M", "groupWA.PP1.M")), listValues = c(1/2,-1/2), alpha = 0.05)
+# res_female <- results(dds, contrast = list(c(),c()), listValues = c(1/2,-1/2), alpha = 0.05)
+
+# Re order in terms of adjusted p values and view
+res_male <- res_male[order(res_male$padj),]
+head(res_male)
+
+# View summary
+summary(res_male)
+
+# Make an MA plot
+plotMA(res_male, main="DESeq2",ylim=c(-2,2))
+abline(h=c(-1,1), col="blue", lwd=2)
+
+# subset genes that are significant and view new dimensions
+sig_male <- res_male[which(res_male$padj < 0.05), ]
+dim(sig_male)
+
+# convert to a data frame, add row names
+sig_male_df <- as.data.frame(sig_male)
+sig_male_df$Row.names <- rownames(sig_male_df)
+dim(sig_male_df)
+
+# put genes of interest into a vector and verify by length
+genesOfInterest_male <- c(sig_male_df$Row.names)
+length(genesOfInterest_male)
+
+# Making GO plots
+write.csv(res_male, file="DGE_male.csv", row.names=TRUE, quote=FALSE)
+
+# change p-value to -log(pvalue) and export as .csv with row names
+
+neglogpval_male <- as.matrix(-log(res_male$pvalue))
+head(neglogpval_male)
+
+res_male_negpval <- cbind(row.names(res_male),neglogpval_male)
+head(res_male_negpval)
+
+colnames(res_male_negpval)=c("gene","neglogpval")
+
+write.csv(res_male_negpval, file="DGE_male_neglogpval.csv", row.names=FALSE,quote=FALSE)
+
+# Rest of GO plot in different file
+
+# make a new column called combined with all three variables in it
+dds$combined = factor(paste0(dds$population, "-", dds$devstage, "-", dds$sex))
+dds$combined
+dds$combined <- factor(dds$combined, levels=c("NC-AD4-F","NC-AD4-M", "NC-L3L-F", "NC-L3L-M", "NC-PD1-F", "NC-PD1-M", "NC-PP1-F", "NC-PP1-M", "WA-AD4-F", "WA-AD4-M", "WA-L3L-F", "WA-L3L-M", "WA-PD1-F", "WA-PD1-M", "WA-PP1-F", "WA-PP1-M"), labels=c("NC-AD4-F","NC-AD4-M", "NC-L3L-F", "NC-L3L-M", "NC-PD1-F", "NC-PD1-M", "NC-PP1-F", "NC-PP1-M", "WA-AD4-F", "WA-AD4-M", "WA-L3L-F", "WA-L3L-M", "WA-PD1-F", "WA-PD1-M", "WA-PP1-F", "WA-PP1-M"))
+
+# get the mean per group
+baseMeanPerGrp_male <- sapply( levels(dds$combined), function(lvl) rowMeans( counts(dds,normalized=TRUE)[,dds$combined == lvl] ) )
+
+# view with head and dim
+head(baseMeanPerGrp_male)
+dim(baseMeanPerGrp_male)
+
+# pulls out normalized counts (avg of 3 reps) for all of our significant genes
+m_male <- baseMeanPerGrp_male[genesOfInterest_male, c("NC-AD4-M", "NC-L3L-M", "NC-PD1-M", "NC-PP1-M", "WA-AD4-M", "WA-L3L-M", "WA-PD1-M", "WA-PP1-M")]
+
+# View
+head(m_male)
+dim(m_male)
+
+# Create heatmap
+mat_scaled_male = t(apply(m_male, 1, scale))
+head(mat_scaled_male)
+
+pheatmap(mat_scaled_male, labels_col=c("NC-AD4-M", "NC-L3L-M", "NC-PD1-M", "NC-PP1-M", "WA-AD4-M", "WA-L3L-M", "WA-PD1-M", "WA-PP1-M"), cluster_cols=TRUE, cluster_rows=TRUE)
+
+
+
+```

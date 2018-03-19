@@ -1,0 +1,470 @@
+---
+title: "Assignment 1 Code"
+author: "Ethan Thibault"
+date: "3/19/2018"
+output: html_document
+---
+
+In this entry to my lab notebook, I will have the code I used to complete Assignment 1.
+
+Here is the code for each comparison up to creating the GO enrichment plots.
+
+```{r}
+# This is the code for my first assignment in PBIO 381 where I will use RNA-seq data to identify differential gene expression between Western Australian (WA) and North Carolinian (NC) bull headed beetle, **Onthophagus taurus**, males, females, and male female combined populations.
+# 
+# By doing this in R Markdown, I will be able to annotate my code in Markdown and in chunks and publish that as an html link for my lab notebook with consistent formatting that doesn't turn my comments into headers.
+
+# Set working directory
+# setwd("~/Documents/UVM_2018/PBIO381/PBIO_381_Notebook")
+# 
+# # upload packages
+# library(DESeq2)
+# library(ggplot2)
+# 
+# # # Read in data file with each individual as the column headers, each contig being mapped to as the row names and the number of counts per contig per individual
+# # countsTable <- read.delim("allcountsdataRN_noIT.txt", header=TRUE, stringsAsFactors = TRUE, row.names = 1)
+# # 
+# # # Convert that table into a matrix and verify with head
+# # countData <- as.matrix(countsTable)
+# # head(countData)
+# # 
+# # # Read in a data file with the individual codes delinneated
+# # conds <- read.delim("cols_data_noIT.txt", header=TRUE, stringsAsFactors =  TRUE, row.names = 1)
+# # 
+# # # View it with head and convert to a data frame.
+# # head(conds)
+# # colData <- as.data.frame(conds)
+# # # group the columns into a third column with sex, population and devstage and head to verify
+# # colData$group <- factor(paste0(colData$sex,"_",colData$population,"_",colData$devstage))
+# # head(colData, n=20)
+# 
+# # # Get a model while controlling for differences in devstage and sex
+# # dds <- DESeqDataSetFromMatrix(countData = countData, colData = colData, design = ~ group)
+# # 
+# # # Get the dimensions of the model
+# # dim(dds)
+# # 
+# # # Exclude any mapped counts where there were one or fewer
+# # dds <- dds[rowSums(counts(dds)) > 1,]
+# # dim(dds)
+# # 
+# # # This removed 632 rows (contigs that had one or less mapped reads)
+# # 
+# # ### steves version of DESEQ 1.14.1
+# # 
+# # # Using the standard modelmatrixtype, identify differential gene expression using DESeq
+# # # This will calculate fold changes in expression at different contigs and give me p values and adjusted p values as well
+# # dds <- DESeq(dds, modelMatrixType = "standard", parallel = TRUE)
+# 
+# # From Steve. This is the output from Steve's
+# load("dds_GroupDesign.RData")
+# resultsNames(dds)
+# 
+# #  [1] "Intercept"     "groupNC.AD4.F" "groupNC.AD4.M" "groupNC.L3L.F" "groupNC.L3L.M"
+# #  [6] "groupNC.PD1.F" "groupNC.PD1.M" "groupNC.PP1.F" "groupNC.PP1.M" "groupWA.AD4.F"
+# # [11] "groupWA.AD4.M" "groupWA.L3L.F" "groupWA.L3L.M" "groupWA.PD1.F" "groupWA.PD1.M"
+# # [16] "groupWA.PP1.F" "groupWA.PP1.M"
+# 
+# # assign resuuls to a variable and view its structure (which is difficult to understand)
+# res <- results(dds)
+# str(res)
+# 
+# # Re-order the results in order of adjusted pvalue and get a summary
+# res <- res[order(res$padj),]
+# head(res)
+# summary(res)
+# 
+# # First, I am interested in the results of comparing the two populations, so I am going to extract the results of just the population comparison
+# res_pop <- results(dds, contrast = list(c("groupNC.AD4.F", "groupNC.AD4.M", "groupNC.L3L.F", "groupNC.L3L.M", "groupNC.PD1.F", "groupNC.PD1.M", "groupNC.PP1.F", "groupNC.PP1.M"),c("groupWA.AD4.F", "groupWA.AD4.M", "groupWA.L3L.F", "groupWA.L3L.M", "groupWA.PD1.F", "groupWA.PD1.M", "groupWA.PP1.F", "groupWA.PP1.M")), listValues=c(1/2,-1/2),alpha=0.05)
+# # res_male <- results(dds, contrast = list(c(),c()), listValues = c(1/2,-1/2), alpha = 0.05)
+# # res_female <- results(dds, contrast = list(c(),c()), listValues = c(1/2,-1/2), alpha = 0.05)
+# 
+# # Re order in terms of adjusted p values and view
+# res_pop <- res_pop[order(res_pop$padj),]
+# head(res_pop)
+# 
+# # View summary
+# summary(res_pop)
+# 
+# # Make an MA plot
+# plotMA(res_pop, main="DESeq2",ylim=c(-2,2))
+# abline(h=c(-1,1), col="blue", lwd=2)
+# 
+# # subset genes that are significant and view new dimensions
+# sig_pop <- res_pop[which(res_pop$padj < 0.05), ]
+# dim(sig_pop)
+# 
+# # convert to a data frame, add row names
+# sig_pop_df <- as.data.frame(sig_pop)
+# sig_pop_df$Row.names <- rownames(sig_pop_df)
+# dim(sig_pop_df)
+# 
+# # put genes of interest into a vector and verify by length
+# genesOfInterest_pop <- c(sig_pop_df$Row.names)
+# length(genesOfInterest_pop)
+# 
+# # Making GO plots
+# write.csv(res_pop, file="DGE_pop.csv", row.names=TRUE, quote=FALSE)
+# 
+# # change p-value to -log(pvalue) and export as .csv with row names
+# 
+# neglogpval_pop <- as.matrix(-log(res_pop$pvalue))
+# head(neglogpval_pop)
+# 
+# res_pop_negpval <- cbind(row.names(res_pop),neglogpval_pop)
+# head(res_pop_negpval)
+# 
+# colnames(res_pop_negpval)=c("gene","neglogpval")
+# head(res_pop_negpval)
+# write.csv(res_pop_negpval, file="DGE_pop_neglogpval.csv", row.names=FALSE,quote=FALSE,col.names=TRUE)
+# 
+# # Rest of GO plot in different file
+# 
+# # make a new column called combined with all three variables in it
+# dds$combined = factor(paste0(dds$population, "-", dds$devstage, "-", dds$sex))
+# dds$combined
+# dds$combined <- factor(dds$combined, levels=c("NC-AD4-F","NC-AD4-M", "NC-L3L-F", "NC-L3L-M", "NC-PD1-F", "NC-PD1-M", "NC-PP1-F", "NC-PP1-M", "WA-AD4-F", "WA-AD4-M", "WA-L3L-F", "WA-L3L-M", "WA-PD1-F", "WA-PD1-M", "WA-PP1-F", "WA-PP1-M"), labels=c("NC-AD4-F","NC-AD4-M", "NC-L3L-F", "NC-L3L-M", "NC-PD1-F", "NC-PD1-M", "NC-PP1-F", "NC-PP1-M", "WA-AD4-F", "WA-AD4-M", "WA-L3L-F", "WA-L3L-M", "WA-PD1-F", "WA-PD1-M", "WA-PP1-F", "WA-PP1-M"))
+# 
+# # get the mean per group
+# baseMeanPerGrp_pop <- sapply( levels(dds$combined), function(lvl) rowMeans( counts(dds,normalized=TRUE)[,dds$combined == lvl] ) )
+# 
+# # view with head and dim
+# head(baseMeanPerGrp_pop)
+# dim(baseMeanPerGrp_pop)
+# 
+# # pulls out normalized counts (avg of 3 reps) for all of our significant genes
+# m_pop <- baseMeanPerGrp_pop[genesOfInterest_pop, c("NC-AD4-F","NC-AD4-M", "NC-L3L-F", "NC-L3L-M", "NC-PD1-F", "NC-PD1-M", "NC-PP1-F", "NC-PP1-M", "WA-AD4-F", "WA-AD4-M", "WA-L3L-F", "WA-L3L-M", "WA-PD1-F", "WA-PD1-M", "WA-PP1-F", "WA-PP1-M")]
+# 
+# # View
+# head(m_pop)
+# dim(m_pop)
+# 
+# # Create heatmap
+# mat_scaled_pop = t(apply(m_pop, 1, scale))
+# head(mat_scaled_pop)
+# 
+# library(pheatmap)
+# 
+# pheatmap(mat_scaled_pop, labels_col=c("NC-AD4-F","NC-AD4-M", "NC-L3L-F", "NC-L3L-M", "NC-PD1-F", "NC-PD1-M", "NC-PP1-F", "NC-PP1-M", "WA-AD4-F", "WA-AD4-M", "WA-L3L-F", "WA-L3L-M", "WA-PD1-F", "WA-PD1-M", "WA-PP1-F", "WA-PP1-M"), cluster_cols=TRUE, cluster_rows=TRUE)
+
+```
+
+Here is my comparison of males.
+
+```{r}
+# 
+# setwd("~/Documents/UVM_2018/PBIO381/PBIO_381_Notebook")
+# 
+# 
+# # From Steve. This is the output from Steve's
+# load("dds_GroupDesign.RData")
+# resultsNames(dds)
+# 
+# #  [1] "Intercept"     "groupNC.AD4.F" "groupNC.AD4.M" "groupNC.L3L.F" "groupNC.L3L.M"
+# #  [6] "groupNC.PD1.F" "groupNC.PD1.M" "groupNC.PP1.F" "groupNC.PP1.M" "groupWA.AD4.F"
+# # [11] "groupWA.AD4.M" "groupWA.L3L.F" "groupWA.L3L.M" "groupWA.PD1.F" "groupWA.PD1.M"
+# # [16] "groupWA.PP1.F" "groupWA.PP1.M"
+# 
+# # assign resuuls to a variable and view its structure (which is difficult to understand)
+# res <- results(dds)
+# str(res)
+# 
+# # Re-order the results in order of adjusted pvalue and get a summary
+# res <- res[order(res$padj),]
+# head(res)
+# summary(res)
+# 
+# # Now, I am interested in the results of comparing the males between the two populations, so I am going to extract the results of just the population comparison
+# res_male <- results(dds, contrast = list(c("groupNC.AD4.M", "groupNC.L3L.M", "groupNC.PD1.M", "groupNC.PP1.M" ), c("groupWA.AD4.M", "groupWA.L3L.M", "groupWA.PD1.M", "groupWA.PP1.M")), listValues = c(1/2,-1/2), alpha = 0.05)
+# # res_female <- results(dds, contrast = list(c(),c()), listValues = c(1/2,-1/2), alpha = 0.05)
+# 
+# # Re order in terms of adjusted p values and view
+# res_male <- res_male[order(res_male$padj),]
+# head(res_male)
+# 
+# # View summary
+# summary(res_male)
+# 
+# # Make an MA plot
+# plotMA(res_male, main="DESeq2",ylim=c(-2,2))
+# abline(h=c(-1,1), col="blue", lwd=2)
+# 
+# # subset genes that are significant and view new dimensions
+# sig_male <- res_male[which(res_male$padj < 0.05), ]
+# dim(sig_male)
+# 
+# # convert to a data frame, add row names
+# sig_male_df <- as.data.frame(sig_male)
+# sig_male_df$Row.names <- rownames(sig_male_df)
+# dim(sig_male_df)
+# 
+# # put genes of interest into a vector and verify by length
+# genesOfInterest_male <- c(sig_male_df$Row.names)
+# length(genesOfInterest_male)
+# 
+# # Making GO plots
+# write.csv(res_male, file="DGE_male.csv", row.names=TRUE, quote=FALSE)
+# 
+# # change p-value to -log(pvalue) and export as .csv with row names
+# 
+# neglogpval_male <- as.matrix(-log(res_male$pvalue))
+# head(neglogpval_male)
+# 
+# res_male_negpval <- cbind(row.names(res_male),neglogpval_male)
+# head(res_male_negpval)
+# 
+# colnames(res_male_negpval)=c("gene","neglogpval")
+# 
+# write.csv(res_male_negpval, file="DGE_male_neglogpval.csv", row.names=FALSE,quote=FALSE)
+# 
+# # Rest of GO plot in different file
+# 
+# # make a new column called combined with all three variables in it
+# dds$combined = factor(paste0(dds$population, "-", dds$devstage, "-", dds$sex))
+# dds$combined
+# dds$combined <- factor(dds$combined, levels=c("NC-AD4-F","NC-AD4-M", "NC-L3L-F", "NC-L3L-M", "NC-PD1-F", "NC-PD1-M", "NC-PP1-F", "NC-PP1-M", "WA-AD4-F", "WA-AD4-M", "WA-L3L-F", "WA-L3L-M", "WA-PD1-F", "WA-PD1-M", "WA-PP1-F", "WA-PP1-M"), labels=c("NC-AD4-F","NC-AD4-M", "NC-L3L-F", "NC-L3L-M", "NC-PD1-F", "NC-PD1-M", "NC-PP1-F", "NC-PP1-M", "WA-AD4-F", "WA-AD4-M", "WA-L3L-F", "WA-L3L-M", "WA-PD1-F", "WA-PD1-M", "WA-PP1-F", "WA-PP1-M"))
+# 
+# # get the mean per group
+# baseMeanPerGrp_male <- sapply( levels(dds$combined), function(lvl) rowMeans( counts(dds,normalized=TRUE)[,dds$combined == lvl] ) )
+# 
+# # view with head and dim
+# head(baseMeanPerGrp_male)
+# dim(baseMeanPerGrp_male)
+# 
+# # pulls out normalized counts (avg of 3 reps) for all of our significant genes
+# m_male <- baseMeanPerGrp_male[genesOfInterest_male, c("NC-AD4-M", "NC-L3L-M", "NC-PD1-M", "NC-PP1-M", "WA-AD4-M", "WA-L3L-M", "WA-PD1-M", "WA-PP1-M")]
+# 
+# # View
+# head(m_male)
+# dim(m_male)
+# 
+# # Create heatmap
+# mat_scaled_male = t(apply(m_male, 1, scale))
+# head(mat_scaled_male)
+# 
+# pheatmap(mat_scaled_male, labels_col=c("NC-AD4-M", "NC-L3L-M", "NC-PD1-M", "NC-PP1-M", "WA-AD4-M", "WA-L3L-M", "WA-PD1-M", "WA-PP1-M"), cluster_cols=TRUE, cluster_rows=TRUE)
+
+```
+
+Here is my comparison of females.
+
+```{r}
+# Set working directory
+# setwd("~/Documents/UVM_2018/PBIO381/PBIO_381_Notebook")
+# 
+# # upload packages
+# library(DESeq2)
+# library(ggplot2)
+# 
+# # # Read in data file with each individual as the column headers, each contig being mapped to as the row names and the number of counts per contig per individual
+# # countsTable <- read.delim("allcountsdataRN_noIT.txt", header=TRUE, stringsAsFactors = TRUE, row.names = 1)
+# # 
+# # # Convert that table into a matrix and verify with head
+# # countData <- as.matrix(countsTable)
+# # head(countData)
+# # 
+# # # Read in a data file with the individual codes delinneated
+# # conds <- read.delim("cols_data_noIT.txt", header=TRUE, stringsAsFactors =  TRUE, row.names = 1)
+# # 
+# # # View it with head and convert to a data frame.
+# # head(conds)
+# # colData <- as.data.frame(conds)
+# # # group the columns into a third column with sex, population and devstage and head to verify
+# # colData$group <- factor(paste0(colData$sex,"_",colData$population,"_",colData$devstage))
+# # head(colData, n=20)
+# 
+# # # Get a model while controlling for differences in devstage and sex
+# # dds <- DESeqDataSetFromMatrix(countData = countData, colData = colData, design = ~ group)
+# # 
+# # # Get the dimensions of the model
+# # dim(dds)
+# # 
+# # # Exclude any mapped counts where there were one or fewer
+# # dds <- dds[rowSums(counts(dds)) > 1,]
+# # dim(dds)
+# # 
+# # # This removed 632 rows (contigs that had one or less mapped reads)
+# # 
+# # ### steves version of DESEQ 1.14.1
+# # 
+# # # Using the standard modelmatrixtype, identify differential gene expression using DESeq
+# # # This will calculate fold changes in expression at different contigs and give me p values and adjusted p values as well
+# # dds <- DESeq(dds, modelMatrixType = "standard", parallel = TRUE)
+# 
+# # From Steve. This is the output from Steve's
+# load("dds_GroupDesign.RData")
+# resultsNames(dds)
+# 
+# #  [1] "Intercept"     "groupNC.AD4.F" "groupNC.AD4.M" "groupNC.L3L.F" "groupNC.L3L.M"
+# #  [6] "groupNC.PD1.F" "groupNC.PD1.M" "groupNC.PP1.F" "groupNC.PP1.M" "groupWA.AD4.F"
+# # [11] "groupWA.AD4.M" "groupWA.L3L.F" "groupWA.L3L.M" "groupWA.PD1.F" "groupWA.PD1.M"
+# # [16] "groupWA.PP1.F" "groupWA.PP1.M"
+# 
+# # assign resuuls to a variable and view its structure (which is difficult to understand)
+# res <- results(dds)
+# str(res)
+# 
+# # Re-order the results in order of adjusted pvalue and get a summary
+# res <- res[order(res$padj),]
+# head(res)
+# summary(res)
+# 
+# # First, I am interested in the results of comparing the two populations, so I am going to extract the results of just the population comparison
+# res_female <- results(dds, contrast = list(c("groupNC.AD4.F", "groupNC.L3L.F", "groupNC.PD1.F", "groupNC.PP1.F"), c("groupWA.AD4.F", "groupWA.L3L.F", "groupWA.PD1.F", "groupWA.PP1.F")), listValues = c(1/2,-1/2), alpha = 0.05)
+# 
+# # Re order in terms of adjusted p values and view
+# res_female <- res_female[order(res_female$padj),]
+# head(res_female)
+# 
+# # View summary
+# summary(res_female)
+# 
+# # Make an MA plot
+# plotMA(res_female, main="DESeq2",ylim=c(-2,2))
+# abline(h=c(-1,1), col="blue", lwd=2)
+# 
+# # subset genes that are significant and view new dimensions
+# sig_female <- res_female[which(res_female$padj < 0.05), ]
+# dim(sig_female)
+# 
+# # convert to a data frame, add row names
+# sig_female_df <- as.data.frame(sig_female)
+# sig_female_df$Row.names <- rownames(sig_female_df)
+# dim(sig_female_df)
+# 
+# # put genes of interest into a vector and verify by length
+# genesOfInterest_female <- c(sig_female_df$Row.names)
+# length(genesOfInterest_female)
+# 
+# # Making GO plots
+# write.csv(res_female, file="DGE_female.csv", row.names=TRUE, quote=FALSE)
+# 
+# # change p-value to -log(pvalue) and export as .csv with row names
+# 
+# neglogpval_female <- as.matrix(-log(res_female$pvalue))
+# head(neglogpval_female)
+# 
+# res_female_negpval <- cbind(row.names(res_female),neglogpval_female)
+# head(res_female_negpval)
+# 
+# colnames(res_female_negpval)=c("gene","neglogpval")
+# head(res_female_negpval)
+# write.csv(res_female_negpval, file="DGE_female_neglogpval.csv", row.names=FALSE,quote=FALSE,col.names=TRUE)
+# 
+# # Rest of GO plot in different file
+# 
+# # make a new column called combined with all three variables in it
+# dds$combined = factor(paste0(dds$population, "-", dds$devstage, "-", dds$sex))
+# dds$combined
+# dds$combined <- factor(dds$combined, levels=c("NC-AD4-F","NC-AD4-M", "NC-L3L-F", "NC-L3L-M", "NC-PD1-F", "NC-PD1-M", "NC-PP1-F", "NC-PP1-M", "WA-AD4-F", "WA-AD4-M", "WA-L3L-F", "WA-L3L-M", "WA-PD1-F", "WA-PD1-M", "WA-PP1-F", "WA-PP1-M"), labels=c("NC-AD4-F","NC-AD4-M", "NC-L3L-F", "NC-L3L-M", "NC-PD1-F", "NC-PD1-M", "NC-PP1-F", "NC-PP1-M", "WA-AD4-F", "WA-AD4-M", "WA-L3L-F", "WA-L3L-M", "WA-PD1-F", "WA-PD1-M", "WA-PP1-F", "WA-PP1-M"))
+# 
+# # get the mean per group
+# baseMeanPerGrp_female <- sapply( levels(dds$combined), function(lvl) rowMeans( counts(dds,normalized=TRUE)[,dds$combined == lvl] ) )
+# 
+# # view with head and dim
+# head(baseMeanPerGrp_female)
+# dim(baseMeanPerGrp_female)
+# 
+# # pulls out normalized counts (avg of 3 reps) for all of our significant genes
+# m_female <- baseMeanPerGrp_female[genesOfInterest_female, c("NC-AD4-F", "NC-L3L-F", "NC-PD1-F", "NC-PP1-F", "WA-AD4-F", "WA-L3L-F", "WA-PD1-F", "WA-PP1-F")]
+# 
+# # View
+# head(m_female)
+# dim(m_female)
+# 
+# # Create heatmap
+# mat_scaled_female = t(apply(m_female, 1, scale))
+# head(mat_scaled_female)
+# 
+# library(pheatmap)
+# 
+# pheatmap(mat_scaled_female, labels_col=c("NC-AD4-F", "NC-L3L-F", "NC-PD1-F", "NC-PP1-F", "WA-AD4-F", "WA-L3L-F", "WA-PD1-F", "WA-PP1-F"), cluster_cols=TRUE, cluster_rows=TRUE)
+
+```
+
+Below is the code I used to create the GO enrichment plots. Instead of putting this code in three times, all I did in my actual work was change the name of the input file to DGE_female_neglogpval.csv and DGE_male_neglogpval.csv.
+
+```{r}
+# First, press command-D on mac or ctrl-shift-H in Rstudio and navigate to the directory containing scripts and input files. Then edit, mark and execute the following bits of code, one after another.
+# setwd("~/Documents/UVM_2018/PBIO381/PBIO_381_Notebook/Enrichment")
+# 
+# # Can run for all 6 inputs, mean and max for each of the three pop. pair FSTs and can do for each GO division BP, MF, CC
+# 
+# # Edit these to match your data file names: 
+# input="DGE_male_neglogpval.csv" # two columns of comma-separated values: gene id, continuous measure of significance. To perform standard GO enrichment analysis based on Fisher's exact test, use binary measure (0 or 1, i.e., either sgnificant or not).
+# ## Make sure this is saved as Unix (LF) - open in TextWrangler, save as, change from Classic Mac to Unix (LF)!!!
+# goAnnotations="gene_annotation_only.tab" # two-column, tab-delimited, one line per gene, multiple GO terms separated by semicolon. If you have multiple lines per gene, use nrify_GOtable.pl prior to running this script.
+# goDatabase="go.obo" # download from http://www.geneontology.org/GO.downloads.ontology.shtml
+# goDivision="BP" # either MF, or BP, or CC
+# source("gomwu.functions.R")
+# 
+# 
+# # Calculating stats. It takes ~3 min for MF and BP. Do not rerun it if you just want to replot the data with different cutoffs, go straight to gomwuPlot. If you change any of the numeric values below, delete the files that were generated in previos runs first.
+# gomwuStats(input, goDatabase, goAnnotations, goDivision,
+#            perlPath="perl", # replace with full path to perl executable if it is not in your system's PATH already
+#            largest=0.1,  # a GO category will not be considered if it contains more than this fraction of the total number of genes
+#            smallest=5,   # a GO category should contain at least this many genes to be considered
+#            clusterCutHeight=0.25, # threshold for merging similar (gene-sharing) terms. 
+#            Alternative="g" # by default the MWU test is two-tailed; specify "g" or "l" of you want to test for "greater" or "less" instead
+# )
+# # do not continue if the printout shows that no GO terms pass 10% FDR.
+# 
+# # go.obo gene_annotation_only.tab DGE_NCvsWA_pop_pval.csv BP largest=0.1 smallest=5cutHeight=0.25
+# 
+# # Run parameters:
+# 
+# # largest GO category as fraction of all genes (largest)  : 0.1
+# # smallest GO category as # of genes (smallest)  : 5
+# # clustering threshold (clusterCutHeight) : 0.25
+# 
+# # -----------------
+# # retrieving GO hierarchy, reformatting data...
+# 
+# # -------------
+# # go_reformat:
+# # Genes with GO annotations, but not listed in measure table: 5
+# 
+# # Terms without defined level (old ontology?..): 0
+# # -------------
+# # -------------
+# # go_nrify:
+# # 1568 categories, 1294 genes; size range 5-129.4
+# # 34 too broad
+# # 1131 too small
+# # 403 remaining
+# 
+# # removing redundancy:
+# 
+# # calculating GO term similarities based on shared genes...
+# # 209 non-redundant GO categories of good size
+# # -------------
+# 
+# # Secondary clustering:
+# # calculating similarities....
+# # Continuous measure of interest: will perform MWU test
+# # 3  GO terms at 10% FDR  for DGE_NCvsWA_pop_pval - 3 very different, interesting, transport, signal transduction, and metabolism
+# 
+# # Continuous measure of interest: will perform MWU test
+# # 3  GO terms at 10% FDR  for DGE_NCvsWA_pop_absstat -  same 3 types of categories as above
+# # GO terms dispayed:  3 
+# # "Good genes" accounted for:  61 out of 393 ( 16% )  - but here this is different, above showed 0 "good" genes, so somthing about pvals vs the actual statistic
+# 
+# # Continuous measure of interest: will perform MWU test
+# # 5  GO terms at 10% FDR  for DGE_NCvsWA_pop_absLFC
+# # GO terms dispayed:  5 - all related to metabolism - LFC is not as good of metric to use.
+# # "Good genes" accounted for:  0 out of 0 ( NaN% )
+# 
+# ###################### Plotting results
+# library(ape)
+# quartz()
+# gomwuPlot(input,goAnnotations,goDivision,
+#           absValue=-log(0.05,10),  # genes with the measure value exceeding this will be counted as "good genes". Specify absValue=0.5 if you are doing Fisher's exact test for standard GO enrichment.
+#           level1=0.1, # FDR threshold for plotting. Specify level1=1 to plot all GO categories containing genes exceeding the absValue.
+#           level2=0.05, # FDR cutoff to print in regular (not italic) font.
+#           level3=0.01, # FDR cutoff to print in large bold font.
+#           txtsize=1.2,    # decrease to fit more on one page, or increase (after rescaling the plot so the tree fits the text) for better "word cloud" effect
+#           treeHeight=0.5 # height of the hierarchical clustering tree
+#           #	colors=c("dodgerblue2","firebrick1","skyblue","lightcoral") # these are default colors, un-remar and change if needed
+# )
+```
+
