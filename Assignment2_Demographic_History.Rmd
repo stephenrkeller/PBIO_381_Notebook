@@ -1,0 +1,379 @@
+---
+title: 'Assignment 2: Population Genetics'
+author: "Ethan Thibault"
+date: "3/22/2018"
+output: html_document
+---
+
+This file is assignment two, where I will generate data using a different thinning value than what we used in class (1000 bp), run admixture, identify the differences thinning size makes, and craft a hypothesis of the demographic history of the three populations of beetles (Italy, North Carolina, and Western Australia).
+
+## Part One
+
+The first step is to create a new vcf file using a different thinning value. I will choose a value above and below 1000 to better elucidate the impact of thinning on K. This process needs to be done in the terminal so I will copy and paste that code below.
+
+I ran vcf tools, calling my vcf file, thinning to 500bp, recoding it, and giving it the prefix "thin500".
+
+*vcftools --vcf OTAU_2018_reads2snps_DP10GP95_biallelic_MAF01_Miss0.8.vcf.recode.vcf --thin 500 --recode --out thin500*
+
+"After filtering, kept 18137 out of a possible 133291 Sites"
+
+I will do the same thing, but also for 1500bp thinning.
+
+*vcftools --vcf OTAU_2018_reads2snps_DP10GP95_biallelic_MAF01_Miss0.8.vcf.recode.vcf --thin 1500 --recode --out thin1500*
+
+"After filtering, kept 9689 out of a possible 133291 Sites"
+
+I am also just going to run 1000bp thinning again.
+
+*vcftools --vcf OTAU_2018_reads2snps_DP10GP95_biallelic_MAF01_Miss0.8.vcf.recode.vcf --thin 1000 --recode --out thin1000*
+
+"After filtering, kept 11964 out of a possible 133291 Sites"
+
+My output files that I will use PGDSpider to transform into .geno files are called:
+
+thin500.recode.vcf
+
+thin1000.recode.vcf
+
+thin1500.recode.vcf
+
+My next step is to open the bash file, and change the input file name and alter the output file name so I know which thinning parameter was used. (I will also rewrite the bash script so I have one for each file).
+
+thin500vcf2geno.sh:
+
+java -Xmx2G -jar /data/popgen/PGDSpider_2.0.9.0/PGDSpider2-cli.jar -inputfile ~/myresults/thin500.recode.vcf -inputformat VCF -outputfile ~/myresults/thin500.recode.vcf.geno -outputformat EIGENSOFT -spid ~/myscripts/beetle.spid
+
+thin100vcf2geno.sh:
+
+java -Xmx2G -jar /data/popgen/PGDSpider_2.0.9.0/PGDSpider2-cli.jar -inputfile ~/myresults/thin1000.recode.vcf -inputformat VCF -outputfile ~/myresults/thin1000.recode.vcf.geno -outputformat EIGENSOFT -spid ~/myscripts/beetle.spid
+
+thin1500vcf2geno.sh:
+
+java -Xmx2G -jar /data/popgen/PGDSpider_2.0.9.0/PGDSpider2-cli.jar -inputfile ~/myresults/thin1500.recode.vcf -inputformat VCF -outputfile ~/myresults/thin1500.recode.vcf.geno -outputformat EIGENSOFT -spid ~/myscripts/beetle.spid
+
+Now I need to gain access to execute all of these bash scripts.
+
+chmod u+x "filename"
+
+Run bash scripts!
+
+bash thin500vcf2geno.sh
+
+I got this warning, not sure if it will impact my results: "Warning: Could not get charToByteConverterClass!"
+
+I ran a head and got the following, so everything seems okay.
+
+229922222222222222929222109112221219211221921119922292129229222222922222
+111222122122121102122212110110011010011001021211191121199212212011121112
+292929222222222212222222229222229222222222222222212992229229222222922222
+222922922222222210122122219022121121222121221911211910299929129212221022
+222292222222222222222222222222291222221922229922922292299229222229222222
+112111212111212121011221221222211222221221212221191990129111222211110122
+112101121121221022111101220122211122211212112222121112121122221202221120
+222222122222222211222222122222222222222222212222222222222222222222222222
+222212212221212222222120111022222200011022200220092192222221122222222122
+292222221222222122222222222222222222222222229922292299222222222222222222
+
+bash thin1000vcf2geno.sh
+
+229922222222222222929222109112221219211221921119922292129229222222922222
+292929222222222212222222229222229222222222222222212992229229222222922222
+299111111221122222222922122902222219112922221122122192222229202129112219
+112111212111212121011221221222211222221221212221191990129111222211110122
+222222122222222211222222122222222222222222212222222222222222222222222222
+222212212221212222222120111022222200011022200220092192222221122222222122
+221111112211211221021110000001111200000010100100122122111120121211110010
+222922222222222212222992219222222222222922222121222992222222222222222221
+222222212212222222992992112222211229222222229919022122229922212129922229
+922222212122221229192292222292222229121122212222291292299219011121122012
+
+bash thin1500vcf2geno.sh
+
+292929222222222212222222229222229222222222222222212992229229222222922222
+219292221222222222222222222222222222222222222222222292299222222222222292
+112111212111212121011221221222211222221221212221191990129111222211110122
+222212212221212222222120111022222200011022200220092192222221122222222122
+222922222222222212222992219222222222222922222121222992222222222222222221
+222222212212222222992992112222211229222222229919022122229922212129922229
+922222212122221229192292222292222229121122212222291292299219011121122012
+211222222222222222222222222211222121222222111222122221022212222121221222
+221111222222221222222222292992222229222212222122121222192219112221121221
+
+Next, I will change the ADMIX.sh bash scripts to specify files as to their thinning parameter
+
+thin500ADMIX.sh
+
+for K in {1..10}
+
+do
+
+admixture -j4 --cv=10 ~/myresults/thin500.recode.vcf.geno $K | tee thin500log${K}.out
+
+done
+
+grep "CV" thin500log*out >thin500chooseK.txt
+
+thin1000ADMIX.sh
+
+for K in {1..10}
+
+do
+
+admixture -j4 --cv=10 ~/myresults/thin1000.recode.vcf.geno $K | tee thin1000log${K}.out
+
+done
+
+grep "CV" thin1000log*out >thin1000chooseK.txt
+
+thin1500ADMIX.sh
+
+for K in {1..10}
+
+do
+
+admixture -j4 --cv=10 ~/myresults/thin1500.recode.vcf.geno $K | tee thin1500log${K}.out
+
+done
+
+grep "CV" thin1500log*out >thin1500chooseK.txt
+
+Change the execution rights
+
+chmod u+x "filename"
+
+Run the bash files!
+
+bash "filename"
+
+Next I will open the choose files to pick which k values to remove for each of the thinning parameters
+
+thin500chooseK.txt
+
+thin500log10.out:CV error (K=10): 0.72772
+thin500log1.out:CV error (K=1): 0.44602
+thin500log2.out:CV error (K=2): 0.43916
+thin500log3.out:CV error (K=3): 0.44719
+thin500log4.out:CV error (K=4): 0.48326
+thin500log5.out:CV error (K=5): 0.52214
+thin500log6.out:CV error (K=6): 0.55790
+thin500log7.out:CV error (K=7): 0.59654
+thin500log8.out:CV error (K=8): 0.63136
+thin500log9.out:CV error (K=9): 0.64528
+
+For thinning every 500bp I will extract the Q files for K values of 1, 2, 3, and 4
+
+thin1000chooseK.txt
+
+thin1000log10.out:CV error (K=10): 0.74078
+thin1000log1.out:CV error (K=1): 0.44089
+thin1000log2.out:CV error (K=2): 0.43635
+thin1000log3.out:CV error (K=3): 0.44477
+thin1000log4.out:CV error (K=4): 0.47987
+thin1000log5.out:CV error (K=5): 0.51791
+thin1000log6.out:CV error (K=6): 0.55534
+thin1000log7.out:CV error (K=7): 0.58280
+thin1000log8.out:CV error (K=8): 0.62599
+thin1000log9.out:CV error (K=9): 0.66978
+
+For thinning every 500bp I will extract the Q files for K values of 1, 2, 3, and 4
+
+thin1500chooseK.txt
+
+thin1500log10.out:CV error (K=10): 0.73006
+thin1500log1.out:CV error (K=1): 0.44034
+thin1500log2.out:CV error (K=2): 0.43440
+thin1500log3.out:CV error (K=3): 0.44446
+thin1500log4.out:CV error (K=4): 0.48110
+thin1500log5.out:CV error (K=5): 0.51718
+thin1500log6.out:CV error (K=6): 0.55927
+thin1500log7.out:CV error (K=7): 0.59027
+thin1500log8.out:CV error (K=8): 0.62841
+thin1500log9.out:CV error (K=9): 0.66967
+
+For thinning every 500bp I will extract the Q files for K values of 1, 2, 3, and 4
+
+In another terminal on my local device, I used scp to move the Q files identified above into my ADMIXTURE folder.
+
+scp eathibau@pbio381.uvm.edu:~/myresults/thin1000.recode.vcf."K".Q .
+
+Afterwards I moved them into three new admixture folders ADMIXTUREthin500  and the other two
+
+Next I am going to run admixture on these three outputs.
+
+```{r}
+# This R chunk will be for the thinning parameter of 500bp
+setwd("~/Documents/UVM_2018/PBIO381/PBIO_381_Notebook")
+
+# install.packages(c("Cairo","ggplot2","gridExtra","gtable","tidyr","devtools"),dependencies=T)
+# devtools::install_github('royfrancis/pophelper')
+
+library(pophelper)
+
+
+admixfiles=list.files(path=("ADMIXTUREthin500/"),full.names=T)
+admixlist=readQ(files=admixfiles,filetype="basic")
+
+# metadata: sample id and pop from beetle.pop file
+metadata=read.table("cols_data.txt",header=T)
+
+# format metadata to a data frame and ind variables as chars. for plotting
+metadata2=data.frame(sampleid=metadata[,1], population=metadata[,2])
+
+metadata2$sampleid=as.character(metadata2$sampleid)
+metadata2$population=as.character(metadata2$population)
+
+# add in the sample id to the different Q files for plotting
+if(length(unique(sapply(admixlist,nrow)))==1)
+  admixlist <- lapply(admixlist,"rownames<-",metadata2$sampleid)
+
+# four is the k = 5
+head(admixlist[[4]])
+
+pthin500 <- plotQ(admixlist[c(1,2,3,4)],
+           returnplot=T,exportplot=T,quiet=T,basesize=11, imgoutput="join", 
+           showyaxis=T, showticks=T, panelspacer=0.4, useindlab=F, showindlab=F, 
+           grplab=metadata2[2], grplabsize=4, linesize=1, barsize=1, pointsize=3, 
+           panelratio=c(4,1), divsize = 0.75, pointcol="white", showtitle=T, 
+           titlelab="ADMIXTURE analysis on O. tauri, SNPs thinned to 1 per 500bp", 
+           splab=c("K=1","K=2","K=3","K=4"), outputfilename="thin500ADMIXTURE_Otauri",
+           imgtype="pdf",height=3,width=25)
+
+plot(pthin500$plot[[1]])
+```
+
+```{r}
+# This R chunk will be for the thinning parameter of 1000bp
+
+admixfiles=list.files(path=("ADMIXTUREthin1000/"),full.names=T)
+admixlist=readQ(files=admixfiles,filetype="basic")
+
+# metadata: sample id and pop from beetle.pop file
+metadata=read.table("cols_data.txt",header=T)
+
+# format metadata to a data frame and ind variables as chars. for plotting
+metadata2=data.frame(sampleid=metadata[,1], population=metadata[,2])
+
+metadata2$sampleid=as.character(metadata2$sampleid)
+metadata2$population=as.character(metadata2$population)
+
+# add in the sample id to the different Q files for plotting
+if(length(unique(sapply(admixlist,nrow)))==1)
+  admixlist <- lapply(admixlist,"rownames<-",metadata2$sampleid)
+
+# four is the k = 5
+head(admixlist[[4]])
+
+pthin1000 <- plotQ(admixlist[c(1,2,3,4)],
+           returnplot=T,exportplot=T,quiet=T,basesize=11, imgoutput="join", 
+           showyaxis=T, showticks=T, panelspacer=0.4, useindlab=F, showindlab=F, 
+           grplab=metadata2[2], grplabsize=4, linesize=1, barsize=1, pointsize=3, 
+           panelratio=c(4,1), divsize = 0.75, pointcol="white", showtitle=T, 
+           titlelab="ADMIXTURE analysis on O. tauri, SNPs thinned to 1 per kb", 
+           splab=c("K=1","K=2","K=3","K=4"), outputfilename="thin1000ADMIXTURE_Otauri",
+           imgtype="pdf",height=3,width=25)
+
+plot(pthin1000$plot[[1]])
+```
+
+```{r}
+# This R chunk will be for the thinning parameter of 1500bp
+
+admixfiles=list.files(path=("ADMIXTUREthin1500/"),full.names=T)
+admixlist=readQ(files=admixfiles,filetype="basic")
+
+# metadata: sample id and pop from beetle.pop file
+metadata=read.table("cols_data.txt",header=T)
+
+# format metadata to a data frame and ind variables as chars. for plotting
+metadata2=data.frame(sampleid=metadata[,1], population=metadata[,2])
+
+metadata2$sampleid=as.character(metadata2$sampleid)
+metadata2$population=as.character(metadata2$population)
+
+# add in the sample id to the different Q files for plotting
+if(length(unique(sapply(admixlist,nrow)))==1)
+  admixlist <- lapply(admixlist,"rownames<-",metadata2$sampleid)
+
+# four is the k = 5
+head(admixlist[[4]])
+
+pthin1500 <- plotQ(admixlist[c(1,2,3,4)],
+           returnplot=T,exportplot=T,quiet=T,basesize=11, imgoutput="join", 
+           showyaxis=T, showticks=T, panelspacer=0.4, useindlab=F, showindlab=F, 
+           grplab=metadata2[2], grplabsize=4, linesize=1, barsize=1, pointsize=3, 
+           panelratio=c(4,1), divsize = 0.75, pointcol="white", showtitle=T, 
+           titlelab="ADMIXTURE analysis on O. tauri, SNPs thinned to 1 per 1500bp", 
+           splab=c("K=1","K=2","K=3","K=4"), outputfilename="thin1500ADMIXTURE_Otauri",
+           imgtype="pdf",height=3,width=25)
+
+plot(pthin1500$plot[[1]])
+```
+
+Here are links to the three pdf Admixture plots:
+
+[thin500](thin500ADMIXTURE_Otauri.pdf)
+
+[thin1000](thin1000ADMIXTURE_Otauri.pdf)
+
+[thin1500](thin1500ADMIXTURE_Otauri.pdf)
+
+## Part Two
+
+In part two I will be evaluating the nucleotide diversity between the different populations: Italy, Western Australia, and North Carolina.
+
+Again I will be shifting to the terminal.
+
+Here is the code to get nucleotide diversity for each of the populations (done three times one for each population):
+
+*vcftools --vcf OTAU_2018_reads2snps_DP10GP95_biallelic_MAF01_Miss0.8.vcf.recode.vcf --keep IT.inds --site-pi --out ITpi*
+
+Now I need to read these into R to get the mean and standard deviations:
+
+```{r}
+# Here I am reading in the tables
+# Must read headers in as true because when I was reading them in before without the header as true, it was including the names of the columns in the actual column as row 1 and screwing up summary and mean functions
+
+ITpi <- read.table("ITpi.sites.pi", header = TRUE)
+NCpi <- read.table("NCpi.sites.pi", header = TRUE)
+WApi <- read.table("WApi.sites.pi", header = TRUE)
+
+# Run summary on these to get the mean
+summary(ITpi)
+ #           CHROM            POS              PI         
+ # OTAU005778-RA:  532   Min.   :    6   Min.   :0.00000  
+ # OTAU012964-RA:  312   1st Qu.:  654   1st Qu.:0.08156  
+ # OTAU002229-RA:  290   Median : 1336   Median :0.19060  
+ # OTAU005777-RA:  214   Mean   : 2543   Mean   :0.22303  
+ # OTAU006802-RA:  187   3rd Qu.: 2700   3rd Qu.:0.38298  
+ # OTAU010843-RA:  177   Max.   :72391   Max.   :0.51064  
+ # (Other)      :66972  
+summary(NCpi)
+ #           CHROM            POS              PI        
+ # OTAU005778-RA:  300   Min.   :    6   Min.   :0.0000  
+ # OTAU002229-RA:  244   1st Qu.:  666   1st Qu.:0.0000  
+ # OTAU003472-RA:  213   Median : 1384   Median :0.1560  
+ # OTAU000234-RA:  191   Mean   : 2530   Mean   :0.2027  
+ # OTAU009802-RA:  177   3rd Qu.: 2820   3rd Qu.:0.3830  
+ # OTAU010843-RA:  177   Max.   :72391   Max.   :0.5106  
+ # (Other)      :61773      
+summary(WApi)
+ #           CHROM            POS                PI         
+ # OTAU002229-RA:  302   Min.   :    6.0   Min.   :0.00000  
+ # OTAU005778-RA:  277   1st Qu.:  659.2   1st Qu.:0.04167  
+ # OTAU009802-RA:  207   Median : 1365.0   Median :0.19060  
+ # OTAU014439-RA:  195   Mean   : 2611.6   Mean   :0.21413  
+ # OTAU005777-RA:  192   3rd Qu.: 2843.0   3rd Qu.:0.38298  
+ # OTAU000234-RA:  190   Max.   :72391.0   Max.   :0.51064  
+ # (Other)      :42747       
+
+# Pull out the standard deviations
+sd(ITpi$PI)
+# [1] 0.168833
+sd(NCpi$PI)
+# [1] 0.1822379
+sd(WApi$PI)
+# [1] 0.1767055
+
+# The nucleotide diversity is essentially the same across the three populations
+```
+

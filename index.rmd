@@ -38,9 +38,9 @@ Science should be reproducible and one of the best ways to achieve this is by lo
 * [Page 11:](#id-section11). Population Genomics 3: Admixture and Population Structure
 * [Page 12:](#id-section12). 
 * [Page 13:](#id-section13). Code for Assignment One
-* [Page 14:](#id-section14).
-* [Page 15:](#id-section15).
-* [Page 16:](#id-section16).
+* [Page 14: 2018-03-19](#id-section14). PopGenomics tutorial - Day 5
+* [Page 15:2018-03-21](#id-section15). Testing selection using Fst outlier analysis
+* [Page 16: 2018-03-26](#id-section16). Population Genomics 7: Analyzing Fst outlier (Bayescan) results
 * [Page 17:](#id-section17).
 * [Page 18:](#id-section18).
 * [Page 19:](#id-section19).
@@ -692,13 +692,168 @@ chmod u+x ADMIX.sh
 
 ------
 <div id='id-section14'/>
-### Page 14:
+### Page 14: PopGenomics tutorial - Day 5
+
+First, convert vcf file to .geno file using two files necessary for the transformation.
+
+Move the two files to my directory.
+
+When you open the .spid file you need to put the name of the .pop file and it CANNOT be a pathway.
+
+Open the bash script (vcf2geno.sh)
+
+Run the bash script
+
+bash vcf2geno.sh 
+
+Reverse sort to see most recent files at bottom of ll
+
+ll -rt
+
+head out.recode.vcf.geno 
+
+229922222222222222929222109112221219211221921119922292129229222222922222
+292929222222222212222222229222229222222222222222212992229229222222922222
+299111111221122222222922122902222219112922221122122192222229202129112219
+112111212111212121011221221222211222221221212221191990129111222211110122
+222222122222222211222222122222222222222222212222222222222222222222222222
+222212212221212222222120111022222200011022200220092192222221122222222122
+221111112211211221021110000001111200000010100100122122111120121211110010
+222922222222222212222992219222222222222922222121222992222222222222222221
+222222212212222222992992112222211229222222229919022122229922212129922229
+922222212122221229192292222292222229121122212222291292299219011121122012
+
+Genotypes --> Ref:A, Alt:T
+
+0 = AA
+
+1 = AT
+
+2 = TT
+
+9 = "" Missing Data
+
+Open Admixture bash script to continue editing:
+
+Use a loop to run an admixture for every value of k 1 through 10. We need to remove the space between j and 4 and ad an = between cv and 10 and remove space between > and choose (what caused an issue last time)
+
+for K in {1..10}
+
+do
+
+admixture -j4 --cv=10 ~/myresults/out.recode.vcf.geno $K | tee log${K}.out
+
+CV flag is for cross validation.
+
+done
+
+grep "CV" log*out >chooseK.txt
+
+"tee" takes everything that prints and put it into a log file
+
+Cross validation takes all individuals and breaks it into 10 groups and masks one at a time. Trains the model on the 9 unmasked than takes the masked one and splits it into the other ten groups.
+
+Low CV is good and means there is low mismatch of where those masked individuals fall. When K is supported, the values for CV will be low.
+
+Search for CV in log.out files, pull out the value and put into new file. The default for grep is to return the whole line.
+
+Use pound sign to annotate bash files
+
+.P files are allele frequencies
+
+.Q files are the ancestry coefficients
+
+.out file is the logged output (CV, likelihood, Fst values)
+
+The lowest CV values are around K2,3,4
+
+scp the files to my folder:
+
+Q files
+
+col_data.txt
+
+
+
+
 ------
 <div id='id-section15'/>
-### Page 15:
+### Page 15: Testing selection using Fst outlier analysis
+
+Type "bayescan" in terminal and see all the options for the function
+
+-pr_odds --> we need to set a prior of the likelihood of nuetrality at a locus/chance of being locally adapted.
+
+We will all pick different levels of prior odds to see how our results will change in what snps will be picked out of as being under selection. I am setting a value of 10,000
+
+# Make a bash script:
+
+open new bash script with "vi"
+
+#!/bin/bash
+
+# This script will pull in the bayescan input file, run bayescan, using 4 CPUs and 10000 as a prior
+ odds. It will save my output file under myresults. I will also save my
+bayescan /data/project_data/beetles/snps/OTAU_2018_reads2snps_DP10GP95_biallelic_MAF01_Miss0.8.vcf.recode.vcf.bayescan -od ~/myresults -threads 4 -pr_odds 10000
+
+:w ~/myscripts/bayescan10000.sh
+
+I also added a for loop to run the script three times with a thinning value of 10, 20, and 30.
+
+#!/bin/bash
+
+# This script will pull in the bayescan input file, run bayescan, using 4 CPUs and 10000 as a prior odds. It will save my output file under myresults.
+# Use a for loop to run this multiple time with different thinning values
+
+for i in 10 20 30
+
+do
+
+bayescan /data/project_data/beetles/snps/OTAU_2018_reads2snps_DP10GP95_biallelic_MAF01_Miss0.8.vcf.recode.vcf.bayescan -od ~/myresults -threads 4 -pr_odds 10000 -thin $i -o bayescan10000"$i"
+
+done
+
+go to myscripts and change the file so I can execute it.
+
+chmod u+x bayescan.sh
+
+Run this in a screen because it will take a few days to run.
+
+to enter screen: screen
+
+to exit screen ctrl a + d
+
+to reattach: screen -r
+
+
 ------
 <div id='id-section16'/>
-### Page 16:
+### Page 16: Population Genomics 7: Analyzing Fst outlier (Bayescan) results
+
+First we want to verify our outputs.
+
+Run MCMC to verify our outputs.
+
+AccRte --> acceptance rate
+
+baye_fst --> alpha values and posterior probability
+
+sel --> likelihood values from MCMC values
+
+baye_Verif --> like a log file
+
+I will be using one of Morgans runs (she had a prior odds of 10)
+
+I moved the fst and .sel file to my directory with scp
+
+Make a file with chromosome and position of snps
+
+*vcftools --vcf OTAU_2018_reads2snps_DP10GP95_biallelic_MAF01_Miss0.8.vcf.recode.vcf --kept-sites*
+
+## Assignment 2!
+
+[Here is the link](Assignment2_Demographic_History.Rmd) to the code for assignment 2.
+
 ------
 <div id='id-section17'/>
 ### Page 17:

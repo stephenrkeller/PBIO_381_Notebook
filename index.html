@@ -170,9 +170,9 @@ $(document).ready(function () {
 <li><a href="#id-section11">Page 11:</a>. Population Genomics 3: Admixture and Population Structure</li>
 <li><a href="#id-section12">Page 12:</a>.</li>
 <li><a href="#id-section13">Page 13:</a>. Code for Assignment One</li>
-<li><a href="#id-section14">Page 14:</a>.</li>
-<li><a href="#id-section15">Page 15:</a>.</li>
-<li><a href="#id-section16">Page 16:</a>.</li>
+<li><a href="#id-section14">Page 14: 2018-03-19</a>. PopGenomics tutorial - Day 5</li>
+<li><a href="#id-section15">Page 15:2018-03-21</a>. Testing selection using Fst outlier analysis</li>
+<li><a href="#id-section16">Page 16: 2018-03-26</a>. Population Genomics 7: Analyzing Fst outlier (Bayescan) results</li>
 <li><a href="#id-section17">Page 17:</a>.</li>
 <li><a href="#id-section18">Page 18:</a>.</li>
 <li><a href="#id-section19">Page 19:</a>.</li>
@@ -692,17 +692,103 @@ ip0af52337:PBIO_381_Notebook ethanthibault$</p>
 <hr />
 <div id="id-section14"></div>
 </div>
-</div>
-<div id="page-14" class="section level2">
-<h2>### Page 14:</h2>
+<div id="page-14-popgenomics-tutorial---day-5" class="section level3">
+<h3>Page 14: PopGenomics tutorial - Day 5</h3>
+<p>First, convert vcf file to .geno file using two files necessary for the transformation.</p>
+<p>Move the two files to my directory.</p>
+<p>When you open the .spid file you need to put the name of the .pop file and it CANNOT be a pathway.</p>
+<p>Open the bash script (vcf2geno.sh)</p>
+<p>Run the bash script</p>
+<p>bash vcf2geno.sh</p>
+<p>Reverse sort to see most recent files at bottom of ll</p>
+<p>ll -rt</p>
+<p>head out.recode.vcf.geno</p>
+<p>229922222222222222929222109112221219211221921119922292129229222222922222 292929222222222212222222229222229222222222222222212992229229222222922222 299111111221122222222922122902222219112922221122122192222229202129112219 112111212111212121011221221222211222221221212221191990129111222211110122 222222122222222211222222122222222222222222212222222222222222222222222222 222212212221212222222120111022222200011022200220092192222221122222222122 221111112211211221021110000001111200000010100100122122111120121211110010 222922222222222212222992219222222222222922222121222992222222222222222221 222222212212222222992992112222211229222222229919022122229922212129922229 922222212122221229192292222292222229121122212222291292299219011121122012</p>
+<p>Genotypes –&gt; Ref:A, Alt:T</p>
+<p>0 = AA</p>
+<p>1 = AT</p>
+<p>2 = TT</p>
+<p>9 = “” Missing Data</p>
+<p>Open Admixture bash script to continue editing:</p>
+<p>Use a loop to run an admixture for every value of k 1 through 10. We need to remove the space between j and 4 and ad an = between cv and 10 and remove space between &gt; and choose (what caused an issue last time)</p>
+<p>for K in {1..10}</p>
+<p>do</p>
+<p>admixture -j4 –cv=10 ~/myresults/out.recode.vcf.geno <span class="math inline">\(K | tee log\)</span>{K}.out</p>
+<p>CV flag is for cross validation.</p>
+<p>done</p>
+<p>grep “CV” log*out &gt;chooseK.txt</p>
+<p>“tee” takes everything that prints and put it into a log file</p>
+<p>Cross validation takes all individuals and breaks it into 10 groups and masks one at a time. Trains the model on the 9 unmasked than takes the masked one and splits it into the other ten groups.</p>
+<p>Low CV is good and means there is low mismatch of where those masked individuals fall. When K is supported, the values for CV will be low.</p>
+<p>Search for CV in log.out files, pull out the value and put into new file. The default for grep is to return the whole line.</p>
+<p>Use pound sign to annotate bash files</p>
+<p>.P files are allele frequencies</p>
+<p>.Q files are the ancestry coefficients</p>
+<p>.out file is the logged output (CV, likelihood, Fst values)</p>
+<p>The lowest CV values are around K2,3,4</p>
+<p>scp the files to my folder:</p>
+<p>Q files</p>
+<p>col_data.txt</p>
+<hr />
 <div id="id-section15"></div>
 </div>
-<div id="page-15" class="section level2">
-<h2>### Page 15:</h2>
-<div id="id-section16"></div>
+<div id="page-15-testing-selection-using-fst-outlier-analysis" class="section level3">
+<h3>Page 15: Testing selection using Fst outlier analysis</h3>
+<p>Type “bayescan” in terminal and see all the options for the function</p>
+<p>-pr_odds –&gt; we need to set a prior of the likelihood of nuetrality at a locus/chance of being locally adapted.</p>
+<p>We will all pick different levels of prior odds to see how our results will change in what snps will be picked out of as being under selection. I am setting a value of 10,000</p>
 </div>
-<div id="page-16" class="section level2">
-<h2>### Page 16:</h2>
+</div>
+<div id="make-a-bash-script" class="section level1">
+<h1>Make a bash script:</h1>
+<p>open new bash script with “vi”</p>
+</div>
+<div id="binbash" class="section level1">
+<h1>!/bin/bash</h1>
+</div>
+<div id="this-script-will-pull-in-the-bayescan-input-file-run-bayescan-using-4-cpus-and-10000-as-a-prior" class="section level1">
+<h1>This script will pull in the bayescan input file, run bayescan, using 4 CPUs and 10000 as a prior</h1>
+<p>odds. It will save my output file under myresults. I will also save my bayescan /data/project_data/beetles/snps/OTAU_2018_reads2snps_DP10GP95_biallelic_MAF01_Miss0.8.vcf.recode.vcf.bayescan -od ~/myresults -threads 4 -pr_odds 10000</p>
+<p>:w ~/myscripts/bayescan10000.sh</p>
+<p>I also added a for loop to run the script three times with a thinning value of 10, 20, and 30.</p>
+</div>
+<div id="binbash-1" class="section level1">
+<h1>!/bin/bash</h1>
+</div>
+<div id="this-script-will-pull-in-the-bayescan-input-file-run-bayescan-using-4-cpus-and-10000-as-a-prior-odds.-it-will-save-my-output-file-under-myresults." class="section level1">
+<h1>This script will pull in the bayescan input file, run bayescan, using 4 CPUs and 10000 as a prior odds. It will save my output file under myresults.</h1>
+</div>
+<div id="use-a-for-loop-to-run-this-multiple-time-with-different-thinning-values" class="section level1">
+<h1>Use a for loop to run this multiple time with different thinning values</h1>
+<p>for i in 10 20 30</p>
+<p>do</p>
+<p>bayescan /data/project_data/beetles/snps/OTAU_2018_reads2snps_DP10GP95_biallelic_MAF01_Miss0.8.vcf.recode.vcf.bayescan -od ~/myresults -threads 4 -pr_odds 10000 -thin <span class="math inline">\(i -o bayescan10000&quot;\)</span>i&quot;</p>
+<p>done</p>
+<p>go to myscripts and change the file so I can execute it.</p>
+<p>chmod u+x bayescan.sh</p>
+<p>Run this in a screen because it will take a few days to run.</p>
+<p>to enter screen: screen</p>
+<p>to exit screen ctrl a + d</p>
+<p>to reattach: screen -r</p>
+<hr />
+<div id="id-section16"></div>
+<div id="page-16-population-genomics-7-analyzing-fst-outlier-bayescan-results" class="section level3">
+<h3>Page 16: Population Genomics 7: Analyzing Fst outlier (Bayescan) results</h3>
+<p>First we want to verify our outputs.</p>
+<p>Run MCMC to verify our outputs.</p>
+<p>AccRte –&gt; acceptance rate</p>
+<p>baye_fst –&gt; alpha values and posterior probability</p>
+<p>sel –&gt; likelihood values from MCMC values</p>
+<p>baye_Verif –&gt; like a log file</p>
+<p>I will be using one of Morgans runs (she had a prior odds of 10)</p>
+<p>I moved the fst and .sel file to my directory with scp</p>
+<p>Make a file with chromosome and position of snps</p>
+<p><em>vcftools –vcf OTAU_2018_reads2snps_DP10GP95_biallelic_MAF01_Miss0.8.vcf.recode.vcf –kept-sites</em></p>
+</div>
+<div id="assignment-2" class="section level2">
+<h2>Assignment 2!</h2>
+<p><a href="Assignment2_Demographic_History.Rmd">Here is the link</a> to the code for assignment 2.</p>
+<hr />
 <div id="id-section17"></div>
 </div>
 <div id="page-17" class="section level2">
@@ -879,6 +965,7 @@ ip0af52337:PBIO_381_Notebook ethanthibault$</p>
 <div id="page-60" class="section level3">
 <h3>Page 60:</h3>
 <hr />
+</div>
 </div>
 </div>
 
