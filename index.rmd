@@ -852,7 +852,7 @@ Make a file with chromosome and position of snps
 
 ## Assignment 2!
 
-[Here is the link](Assignment2_Demographic_History.Rmd) to the code for assignment 2.
+[Here is the link](Assignment2_Demographic_History.html) to the code for assignment 2.
 
 ------
 <div id='id-section17'/>

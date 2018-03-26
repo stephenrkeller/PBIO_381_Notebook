@@ -130,13 +130,13 @@ $(document).ready(function () {
 <h2>Part One</h2>
 <p>The first step is to create a new vcf file using a different thinning value. I will choose a value above and below 1000 to better elucidate the impact of thinning on K. This process needs to be done in the terminal so I will copy and paste that code below.</p>
 <p>I ran vcf tools, calling my vcf file, thinning to 500bp, recoding it, and giving it the prefix “thin500”.</p>
-<p><strong>vcftools –vcf OTAU_2018_reads2snps_DP10GP95_biallelic_MAF01_Miss0.8.vcf.recode.vcf –thin 500 –recode –out thin500</strong></p>
+<p><em>vcftools –vcf OTAU_2018_reads2snps_DP10GP95_biallelic_MAF01_Miss0.8.vcf.recode.vcf –thin 500 –recode –out thin500</em></p>
 <p>“After filtering, kept 18137 out of a possible 133291 Sites”</p>
 <p>I will do the same thing, but also for 1500bp thinning.</p>
-<p>vcftools –vcf OTAU_2018_reads2snps_DP10GP95_biallelic_MAF01_Miss0.8.vcf.recode.vcf –thin 1500 –recode –out thin1500</p>
+<p><em>vcftools –vcf OTAU_2018_reads2snps_DP10GP95_biallelic_MAF01_Miss0.8.vcf.recode.vcf –thin 1500 –recode –out thin1500</em></p>
 <p>“After filtering, kept 9689 out of a possible 133291 Sites”</p>
 <p>I am also just going to run 1000bp thinning again.</p>
-<p>vcftools –vcf OTAU_2018_reads2snps_DP10GP95_biallelic_MAF01_Miss0.8.vcf.recode.vcf –thin 1000 –recode –out thin1000</p>
+<p><em>vcftools –vcf OTAU_2018_reads2snps_DP10GP95_biallelic_MAF01_Miss0.8.vcf.recode.vcf –thin 1000 –recode –out thin1000</em></p>
 <p>“After filtering, kept 11964 out of a possible 133291 Sites”</p>
 <p>My output files that I will use PGDSpider to transform into .geno files are called:</p>
 <p>thin500.recode.vcf</p>
@@ -328,6 +328,81 @@ plot(pthin1500$plot[[1]])</code></pre>
 <h2>Part Two</h2>
 <p>In part two I will be evaluating the nucleotide diversity between the different populations: Italy, Western Australia, and North Carolina.</p>
 <p>Again I will be shifting to the terminal.</p>
+<p>Here is the code to get nucleotide diversity for each of the populations (done three times one for each population):</p>
+<p><em>vcftools –vcf OTAU_2018_reads2snps_DP10GP95_biallelic_MAF01_Miss0.8.vcf.recode.vcf –keep IT.inds –site-pi –out ITpi</em></p>
+<p>Now I need to read these into R to get the mean and standard deviations:</p>
+<pre class="r"><code># Here I am reading in the tables
+# Must read headers in as true because when I was reading them in before without the header as true, it was including the names of the columns in the actual column as row 1 and screwing up summary and mean functions
+
+ITpi &lt;- read.table(&quot;ITpi.sites.pi&quot;, header = TRUE)
+NCpi &lt;- read.table(&quot;NCpi.sites.pi&quot;, header = TRUE)
+WApi &lt;- read.table(&quot;WApi.sites.pi&quot;, header = TRUE)
+
+# Run summary on these to get the mean
+summary(ITpi)</code></pre>
+<pre><code>##            CHROM            POS              PI         
+##  OTAU005778-RA:  532   Min.   :    6   Min.   :0.00000  
+##  OTAU012964-RA:  312   1st Qu.:  654   1st Qu.:0.08156  
+##  OTAU002229-RA:  290   Median : 1336   Median :0.19060  
+##  OTAU005777-RA:  214   Mean   : 2543   Mean   :0.22303  
+##  OTAU006802-RA:  187   3rd Qu.: 2700   3rd Qu.:0.38298  
+##  OTAU010843-RA:  177   Max.   :72391   Max.   :0.51064  
+##  (Other)      :66972</code></pre>
+<pre class="r"><code> #           CHROM            POS              PI         
+ # OTAU005778-RA:  532   Min.   :    6   Min.   :0.00000  
+ # OTAU012964-RA:  312   1st Qu.:  654   1st Qu.:0.08156  
+ # OTAU002229-RA:  290   Median : 1336   Median :0.19060  
+ # OTAU005777-RA:  214   Mean   : 2543   Mean   :0.22303  
+ # OTAU006802-RA:  187   3rd Qu.: 2700   3rd Qu.:0.38298  
+ # OTAU010843-RA:  177   Max.   :72391   Max.   :0.51064  
+ # (Other)      :66972  
+summary(NCpi)</code></pre>
+<pre><code>##            CHROM            POS              PI        
+##  OTAU005778-RA:  300   Min.   :    6   Min.   :0.0000  
+##  OTAU002229-RA:  244   1st Qu.:  666   1st Qu.:0.0000  
+##  OTAU003472-RA:  213   Median : 1384   Median :0.1560  
+##  OTAU000234-RA:  191   Mean   : 2530   Mean   :0.2027  
+##  OTAU009802-RA:  177   3rd Qu.: 2820   3rd Qu.:0.3830  
+##  OTAU010843-RA:  177   Max.   :72391   Max.   :0.5106  
+##  (Other)      :61773</code></pre>
+<pre class="r"><code> #           CHROM            POS              PI        
+ # OTAU005778-RA:  300   Min.   :    6   Min.   :0.0000  
+ # OTAU002229-RA:  244   1st Qu.:  666   1st Qu.:0.0000  
+ # OTAU003472-RA:  213   Median : 1384   Median :0.1560  
+ # OTAU000234-RA:  191   Mean   : 2530   Mean   :0.2027  
+ # OTAU009802-RA:  177   3rd Qu.: 2820   3rd Qu.:0.3830  
+ # OTAU010843-RA:  177   Max.   :72391   Max.   :0.5106  
+ # (Other)      :61773      
+summary(WApi)</code></pre>
+<pre><code>##            CHROM            POS                PI         
+##  OTAU002229-RA:  302   Min.   :    6.0   Min.   :0.00000  
+##  OTAU005778-RA:  277   1st Qu.:  659.2   1st Qu.:0.04167  
+##  OTAU009802-RA:  207   Median : 1365.0   Median :0.19060  
+##  OTAU014439-RA:  195   Mean   : 2611.6   Mean   :0.21413  
+##  OTAU005777-RA:  192   3rd Qu.: 2843.0   3rd Qu.:0.38298  
+##  OTAU000234-RA:  190   Max.   :72391.0   Max.   :0.51064  
+##  (Other)      :42747</code></pre>
+<pre class="r"><code> #           CHROM            POS                PI         
+ # OTAU002229-RA:  302   Min.   :    6.0   Min.   :0.00000  
+ # OTAU005778-RA:  277   1st Qu.:  659.2   1st Qu.:0.04167  
+ # OTAU009802-RA:  207   Median : 1365.0   Median :0.19060  
+ # OTAU014439-RA:  195   Mean   : 2611.6   Mean   :0.21413  
+ # OTAU005777-RA:  192   3rd Qu.: 2843.0   3rd Qu.:0.38298  
+ # OTAU000234-RA:  190   Max.   :72391.0   Max.   :0.51064  
+ # (Other)      :42747       
+
+# Pull out the standard deviations
+sd(ITpi$PI)</code></pre>
+<pre><code>## [1] 0.168833</code></pre>
+<pre class="r"><code># [1] 0.168833
+sd(NCpi$PI)</code></pre>
+<pre><code>## [1] 0.1822379</code></pre>
+<pre class="r"><code># [1] 0.1822379
+sd(WApi$PI)</code></pre>
+<pre><code>## [1] 0.1767055</code></pre>
+<pre class="r"><code># [1] 0.1767055
+
+# The nucleotide diversity is essentially the same across the three populations</code></pre>
 </div>
 
 
