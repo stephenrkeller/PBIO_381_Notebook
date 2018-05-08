@@ -173,14 +173,14 @@ $(document).ready(function () {
 <li><a href="#id-section14">Page 14: 2018-03-19</a>. PopGenomics tutorial - Day 5</li>
 <li><a href="#id-section15">Page 15:2018-03-21</a>. Testing selection using Fst outlier analysis</li>
 <li><a href="#id-section16">Page 16: 2018-03-26</a>. Population Genomics 7: Analyzing Fst outlier (Bayescan) results</li>
-<li><a href="#id-section17">Page 17:</a>.</li>
-<li><a href="#id-section18">Page 18:</a>.</li>
-<li><a href="#id-section19">Page 19:</a>.</li>
-<li><a href="#id-section20">Page 20:</a>.</li>
-<li><a href="#id-section21">Page 21:</a>.</li>
-<li><a href="#id-section22">Page 22:</a>.</li>
-<li><a href="#id-section23">Page 23:</a>.</li>
-<li><a href="#id-section24">Page 24:</a>.</li>
+<li><a href="#id-section17">Page 17:</a>. Population Genomics 7: Analyzing Fst outlier (Bayescan) results</li>
+<li><a href="#id-section18">Page 18:</a>. Day one of project</li>
+<li><a href="#id-section19">Page 19:</a>. bwa aln and bam to sam hw</li>
+<li><a href="#id-section20">Page 20:</a>. Acquiring the necessary files</li>
+<li><a href="#id-section21">Page 21:</a>. 4/23/18 Work Day</li>
+<li><a href="#id-section22">Page 22:</a>. Project Work Day 4/25/18</li>
+<li><a href="#id-section23">Page 23:</a>. Project 4.27.2018</li>
+<li><a href="#id-section24">Page 24:</a>. The rest of my project through 05.08.2018</li>
 <li><a href="#id-section25">Page 25:</a>.</li>
 <li><a href="#id-section26">Page 26:</a>.</li>
 <li><a href="#id-section27">Page 27:</a>.</li>
@@ -790,38 +790,87 @@ ip0af52337:PBIO_381_Notebook ethanthibault$</p>
 <p><a href="Assignment2_Demographic_History.html">Here is the link</a> to the code for assignment 2.</p>
 <hr />
 <div id="id-section17"></div>
-</div>
-<div id="page-17" class="section level2">
-<h2>### Page 17:</h2>
+<div id="page-17-population-genomics-7-analyzing-fst-outlier-bayescan-results" class="section level3">
+<h3>Page 17: Population Genomics 7: Analyzing Fst outlier (Bayescan) results</h3>
+<p>Notes in bayescan r script file.</p>
+<p>To move a file from my computer to the server do in my computer terminal</p>
+<p>scp bayescan_pr10000_candsnps.txt <a href="mailto:eathibau@pbio381.uvm.edu">eathibau@pbio381.uvm.edu</a>:~/myresults</p>
+<p>search for the chrom ids in the models file(reference), then pipe that, search that for gene</p>
+<p>grep -f bayescan_pr10000_candsnps.txt.unique /data/project_data/beetles/reference/OTAU.Models.gff3 | grep “gene” &gt;</p>
+<hr />
 <div id="id-section18"></div>
 </div>
-<div id="page-18" class="section level2">
-<h2>### Page 18:</h2>
+<div id="page-18-day-one-of-project" class="section level3">
+<h3>Page 18: Day one of project</h3>
+<p>First we need to collect all of our RNAseq files.</p>
+<p>Melissa supplied us with trimmed and paired fastq files for the three O. taurus populations (IT, NC, WA). We are also downloading fastq files for Oryctes borbonicus. Melissa will supply us with the fastq for O. nigriventris and O. sagittarius.</p>
+<p>The three populations can be immediately plugged into bwaaln, but we will have to trim and clean the other files.</p>
+<hr />
 <div id="id-section19"></div>
 </div>
-<div id="page-19" class="section level2">
-<h2>### Page 19:</h2>
+<div id="page-19-bwa-aln-and-bam-to-sam-hw" class="section level3">
+<h3>Page 19: bwa aln and bam to sam hw</h3>
+<p>4.14.2018</p>
+<p>For class on Monday I need to run bwa aln on the trimmed fastq files that Melissa put on the server. I also need to convert the resulting sam files to bam files.</p>
+<p>This is what I ran:</p>
+<p>[<a href="mailto:eathibau@pbio381">eathibau@pbio381</a> ~]$ bwa aln /data/project_data/beetles/reference/OTAU.fna /data/project_data/beetles/rawdata/NC* &gt; ~/myproject/results/NCbwaaln.sam</p>
+<p>I needed to pull the WA files from two places</p>
+<p>bwa aln /data/project_data/beetles/reference/OTAU.fna /data/project_data/beetles/rawdata/WA* /data/project_data/beetles/rawdata/IT/WA* &gt; ~/myproject/results/WAbwaaln.sam</p>
+<p>bwa aln /data/project_data/beetles/reference/OTAU.fna /data/project_data/beetles/rawdata/IT/IT* &gt; ~/myproject/results/ITbwaaln.sam</p>
+<p>Finally, I need to convert my sam files to bam files:</p>
+<p>samtools view -b -@ 4 NCbwaaln.sam -o NCbwaaln.bam</p>
+<hr />
 <div id="id-section20"></div>
 </div>
-<div id="page-20" class="section level2">
-<h2>### Page 20:</h2>
+<div id="page-20-acquiring-the-necessary-files" class="section level3">
+<h3>Page 20: Acquiring the necessary files</h3>
+<p>Jamie needs the Bam files and I couldn’t make them because you need to list all of the fastq files in order to use them (not the “*“) so Melissa transfered the count data for me so I can move forward with the WGCNA but also sent us the merged bam file for Jamie.</p>
+<p>I now have all counts data and can start moving forward with WGCNA</p>
+<p>I discussed a lot with Melissa and it is important to think about, do I want to do WGCNA per population or one for all of the beetles. If I do it per pop it will most likely result in a venn diagram versus as a whole I can create distirbutions of centrality values with with non synonymous mutations in each population. Also something to think about, when identifying a threshold, maybe I don’t want to use a threshold value because my outgroups were L3L in NC and WA but not IT because there were no L3L stage samples. By thresholding I may be biasing the data so maybe no threshold will be more appropriate…</p>
+<hr />
 <div id="id-section21"></div>
 </div>
-<div id="page-21" class="section level2">
-<h2>### Page 21:</h2>
+<div id="page-21-42318-work-day" class="section level3">
+<h3>Page 21: 4/23/18 Work Day</h3>
+<p>Today I was able to fix the error I was getting when it wanted to read the data as numeric but it was coming in as an integer.</p>
+<p>bdatExpr0<a href="#section"></a> &lt;- lapply(bdatExpr0, as.numeric)</p>
+<p>Spoke with steve and he thought that using the soft threshhold generated from the softthreshholding function for the pooled population would be best to move forward with (power = 12)</p>
+<hr />
 <div id="id-section22"></div>
 </div>
-<div id="page-22" class="section level2">
-<h2>### Page 22:</h2>
+<div id="page-22-project-work-day-42518" class="section level3">
+<h3>Page 22: Project Work Day 4/25/18</h3>
+<p>I FIXED THE JAVA PROBLEM!!! I believe this is the code that did it in my terminal.</p>
+<p>On macOS High Sierra (10.13.1) and Java Version 9 you have to use a slightly different JVM path (notice the missing jre folder in the path compared to the instructions for earlier Java versions):</p>
+<p>sudo ln -f -s $(/usr/libexec/java_home)/lib/server/libjvm.dylib /usr/local/lib You also have to notify R about the JVM:</p>
+<p>ln -s /usr/local/lib/libjvm.dylib /Library/Frameworks/R.framework/Versions/3.4/Resources/lib/ shareimprove this answer</p>
+<p>I was also having trouble with running wgcna2igraph. To fix this problem, I needed my modules to be numbers without the MEs and I needed a color palette of 30 (using rainbow). I also needed to convert bdatExp0 into a matrix.</p>
+<p>network &lt;- wgcna2igraph(net = netwithpower, datExpr = as.matrix(bdatExpr0), modules2plot = modules2, colors2plot = colors)</p>
+<p>I also figured out how to save the network object so that I could just load that each time I start working</p>
+<p>saveRDS(network, file=“networkObject.rds”)</p>
+<p>network &lt;- readRDS(file=“networkObject.rds”)</p>
+<hr />
 <div id="id-section23"></div>
 </div>
-<div id="page-23" class="section level2">
-<h2>### Page 23:</h2>
+<div id="page-23-project-4.27.2018" class="section level3">
+<h3>Page 23: Project 4.27.2018</h3>
+<p>Today Jamie and I worked on getting a list of genes with putatively deleterious snps in them based on the snpeff annotations. Most of the work done was on Jamie’s computer so I am not totally sure of all of the code.</p>
+<hr />
 <div id="id-section24"></div>
 </div>
-<div id="page-24" class="section level2">
-<h2>### Page 24:</h2>
+<div id="page-24-the-rest-of-my-project-through-05.08.2018" class="section level3">
+<h3>Page 24: The rest of my project through 05.08.2018</h3>
+<p>After working with Jamie, the majority of my work was in an R script trying to manipulate files and tables to compare lists etc. etc. In those script files I have a running dialogue for most of the code I did in annotation form. I am still working on becoming better at annotating my code, however, this class has definitely helped me become much much better and find ways that work for me to keep up with the annotations and not get lost in the code.</p>
+<p>Here is the first script file. This has all my work in WGCNA package, my conversion to an igraph object with the wgcna2igraph function, and the beginnings of running centrality measures.</p>
+<p><a href="MyProject.R">RScript1</a></p>
+<p>The second script file is a lot of working and manipulating and visualizing the eigenvalues (but I also do this in the third script file).</p>
+<p><a href="WorkingWithEigenvalues.R">RScript2</a></p>
+<p>Finally, my last R script is primarily loading other objects I have created in the other two scripts, assigning Acnestral and Derived and comparing lists upon lists upon lists upon lists… the variable names become quite exhaustive.</p>
+<p><a href="ADfinalish.R">RScript3</a></p>
+<p>This is up to when we submitted the paper to you guys.</p>
+<hr />
 <div id="id-section25"></div>
+</div>
 </div>
 <div id="page-25" class="section level2">
 <h2>### Page 25:</h2>

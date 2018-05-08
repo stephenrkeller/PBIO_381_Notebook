@@ -41,14 +41,14 @@ Science should be reproducible and one of the best ways to achieve this is by lo
 * [Page 14: 2018-03-19](#id-section14). PopGenomics tutorial - Day 5
 * [Page 15:2018-03-21](#id-section15). Testing selection using Fst outlier analysis
 * [Page 16: 2018-03-26](#id-section16). Population Genomics 7: Analyzing Fst outlier (Bayescan) results
-* [Page 17:](#id-section17).
-* [Page 18:](#id-section18).
-* [Page 19:](#id-section19).
-* [Page 20:](#id-section20).
-* [Page 21:](#id-section21).
-* [Page 22:](#id-section22).
-* [Page 23:](#id-section23).
-* [Page 24:](#id-section24).
+* [Page 17:](#id-section17). Population Genomics 7: Analyzing Fst outlier (Bayescan) results
+* [Page 18:](#id-section18). Day one of project
+* [Page 19:](#id-section19). bwa aln and bam to sam hw
+* [Page 20:](#id-section20). Acquiring the necessary files
+* [Page 21:](#id-section21). 4/23/18 Work Day
+* [Page 22:](#id-section22). Project Work Day 4/25/18
+* [Page 23:](#id-section23). Project 4.27.2018
+* [Page 24:](#id-section24). The rest of my project through 05.08.2018
 * [Page 25:](#id-section25).
 * [Page 26:](#id-section26).
 * [Page 27:](#id-section27).
@@ -856,28 +856,123 @@ Make a file with chromosome and position of snps
 
 ------
 <div id='id-section17'/>
-### Page 17:
+### Page 17: Population Genomics 7: Analyzing Fst outlier (Bayescan) results
+
+Notes in bayescan r script file.
+
+To move a file from my computer to the server do in my computer terminal
+
+scp bayescan_pr10000_candsnps.txt eathibau@pbio381.uvm.edu:~/myresults
+
+search for the chrom ids in the models file(reference), then pipe that, search that for gene
+
+grep -f bayescan_pr10000_candsnps.txt.unique /data/project_data/beetles/reference/OTAU.Models.gff3 | grep "gene" >
+
 ------
 <div id='id-section18'/>
-### Page 18:
+### Page 18: Day one of project
+
+First we need to collect all of our RNAseq files.
+
+Melissa supplied us with trimmed and paired fastq files for the three O. taurus populations (IT, NC, WA). We are also downloading fastq files for Oryctes borbonicus. Melissa will supply us with the fastq for O. nigriventris and O. sagittarius.
+
+The three populations can be immediately plugged into bwaaln, but we will have to trim and clean the other files.
+
 ------
 <div id='id-section19'/>
-### Page 19:
+### Page 19: bwa aln and bam to sam hw
+
+4.14.2018
+
+For class on Monday I need to run bwa aln on the trimmed fastq files that Melissa put on the server. I also need to convert the resulting sam files to bam files.
+
+This is what I ran:
+
+[eathibau@pbio381 ~]$ bwa aln /data/project_data/beetles/reference/OTAU.fna /data/project_data/beetles/rawdata/NC* > ~/myproject/results/NCbwaaln.sam
+
+I needed to pull the WA files from two places
+
+bwa aln /data/project_data/beetles/reference/OTAU.fna /data/project_data/beetles/rawdata/WA* /data/project_data/beetles/rawdata/IT/WA* > ~/myproject/results/WAbwaaln.sam
+
+bwa aln /data/project_data/beetles/reference/OTAU.fna /data/project_data/beetles/rawdata/IT/IT* > ~/myproject/results/ITbwaaln.sam
+
+Finally, I need to convert my sam files to bam files:
+
+samtools view -b -@ 4 NCbwaaln.sam -o NCbwaaln.bam
+
+
 ------
 <div id='id-section20'/>
-### Page 20:
+### Page 20: Acquiring the necessary files
+
+Jamie needs the Bam files and I couldn't make them because you need to list all of the fastq files in order to use them (not the "*") so Melissa transfered the count data for me so I can move forward with the WGCNA but also sent us the merged bam file for Jamie.
+
+I now have all counts data and can start moving forward with WGCNA
+
+I discussed a lot with Melissa and it is important to think about, do I want to do WGCNA per population or one for all of the beetles. If I do it per pop it will most likely result in a venn diagram versus as a whole I can create distirbutions of centrality values with with non synonymous mutations in each population. Also something to think about, when identifying a threshold, maybe I don't want to use a threshold value because my outgroups were L3L in NC and WA but not IT because there were no L3L stage samples. By thresholding I may be biasing the data so maybe no threshold will be more appropriate...
+
 ------
 <div id='id-section21'/>
-### Page 21:
+### Page 21: 4/23/18 Work Day
+
+Today I was able to fix the error I was getting when it wanted to read the data as numeric but it was coming in as an integer.
+
+bdatExpr0[] <- lapply(bdatExpr0, as.numeric)
+
+Spoke with steve and he thought that using the soft threshhold generated from the softthreshholding function for the pooled population would be best to move forward with (power = 12)
+
+
+
 ------
 <div id='id-section22'/>
-### Page 22:
+### Page 22: Project Work Day 4/25/18
+
+I FIXED THE JAVA PROBLEM!!! I believe this is the code that did it in my terminal.
+
+On macOS High Sierra (10.13.1) and Java Version 9 you have to use a slightly different JVM path (notice the missing jre folder in the path compared to the instructions for earlier Java versions):
+
+sudo ln -f -s $(/usr/libexec/java_home)/lib/server/libjvm.dylib /usr/local/lib
+You also have to notify R about the JVM:
+
+ln -s /usr/local/lib/libjvm.dylib /Library/Frameworks/R.framework/Versions/3.4/Resources/lib/
+shareimprove this answer
+
+I was also having trouble with running wgcna2igraph. To fix this problem, I needed my modules to be numbers without the MEs and I needed a color palette of 30 (using rainbow). I also needed to convert bdatExp0 into a matrix.
+
+network <- wgcna2igraph(net = netwithpower, datExpr = as.matrix(bdatExpr0), modules2plot = modules2, colors2plot = colors)
+
+I also figured out how to save the network object so that I could just load that each time I start working
+
+saveRDS(network, file="networkObject.rds")
+
+network <- readRDS(file="networkObject.rds")
+
 ------
 <div id='id-section23'/>
-### Page 23:
+### Page 23: Project 4.27.2018
+
+Today Jamie and I worked on getting a list of genes with putatively deleterious snps in them based on the snpeff annotations. Most of the work done was on Jamie's computer so I am not totally sure of all of the code.
+
 ------
 <div id='id-section24'/>
-### Page 24:
+### Page 24: The rest of my project through 05.08.2018
+
+After working with Jamie, the majority of my work was in an R script trying to manipulate files and tables to compare lists etc. etc. In those script files I have a running dialogue for most of the code I did in annotation form. I am still working on becoming better at annotating my code, however, this class has definitely helped me become much much better and find ways that work for me to keep up with the annotations and not get lost in the code.
+
+Here is the first script file. This has all my work in WGCNA package, my conversion to an igraph object with the wgcna2igraph function, and the beginnings of running centrality measures.
+
+[RScript1](MyProject.R)
+
+The second script file is a lot of working and manipulating and visualizing the eigenvalues (but I also do this in the third script file).
+
+[RScript2](WorkingWithEigenvalues.R)
+
+Finally, my last R script is primarily loading other objects I have created in the other two scripts, assigning Acnestral and Derived and comparing lists upon lists upon lists upon lists... the variable names become quite exhaustive.
+
+[RScript3](ADfinalish.R)
+
+This is up to when we submitted the paper to you guys.
+
 ------
 <div id='id-section25'/>
 ### Page 25:
